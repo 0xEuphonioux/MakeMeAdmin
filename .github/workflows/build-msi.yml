@@ -13,9 +13,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
       - name: Install WiX Toolset v3
         run: choco install wixtoolset -y
 
@@ -26,18 +23,11 @@ jobs:
           echo "WiX v3 at: $($dir.FullName)"
         shell: pwsh
 
-      - name: Build solution (setup may fail, that's OK)
-        continue-on-error: true
-        run: |
-          dotnet restore MakeMeAdmin.sln -p:RuntimeIdentifier=win-x64
-          msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX_DIR"
-        shell: pwsh
-
       - name: Install WiX Toolset v4
         run: dotnet tool install --global wix
 
       - name: Build MSI
-        run: dotnet build Setup/Setup.wixproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:WixToolDir="$env:WIX_DIR"
+        run: dotnet build Setup/Setup.wixproj -c Release -p:Platform=x64 -p:WixToolDir="$env:WIX_DIR"
         shell: pwsh
 
       - name: Upload MSI artifact
