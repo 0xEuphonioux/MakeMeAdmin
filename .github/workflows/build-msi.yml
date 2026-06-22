@@ -38,7 +38,7 @@ jobs:
         run: dotnet tool install --global wix
 
       - name: Build MSI
-        run: dotnet build Setup/Setup.wixproj -c Release -p:Platform=x64
+        run: dotnet build Setup/Setup.wixproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
