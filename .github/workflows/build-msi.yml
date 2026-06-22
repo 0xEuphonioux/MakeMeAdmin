@@ -30,7 +30,7 @@ jobs:
         continue-on-error: true
         run: |
           dotnet restore MakeMeAdmin.sln -p:RuntimeIdentifier=win-x64
-          msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX3_DIR"
+          msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:Wix3Dir="$env:WIX3_DIR"
         shell: pwsh
 
       - name: Install WiX Toolset v4 (after build, before MSI)
@@ -43,7 +43,7 @@ jobs:
           $wix4Tools = (Resolve-Path "$env:USERPROFILE\.nuget\packages\wixtoolset.sdk\*\tools" | Select-Object -Last 1).Path
           $env:WIX = $wix4Tools
           Write-Host "WiX v4 tools: $wix4Tools"
-          msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX3_DIR" /p:WixToolPath=$wix4Tools
+          msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:Wix3Dir="$env:WIX3_DIR"
         shell: pwsh
 
       - name: Upload MSI artifact
