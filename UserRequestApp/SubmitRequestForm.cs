@@ -251,7 +251,7 @@ namespace SinclairCC.MakeMeAdmin
                                         "Auth: GetCredentials returned null (user cancelled or error)",
                                         EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
                                 }
-                            } while ((null != credentials) && (string.Compare(credentials.UserName, currentUserName, true) != 0));
+                            } while ((null != credentials) && (!nameMatch));
 
                             if (null != credentials)
                             {
