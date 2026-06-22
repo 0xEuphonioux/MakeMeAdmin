@@ -225,6 +225,34 @@ namespace SinclairCC.MakeMeAdmin
                                     {
                                         nameMatch = true; // Token credential: provider verified identity
                                     }
+                                    else if (isCloudAuth)
+                                    {
+                                        // For CloudAP password/UPN auth, the unpacked username
+                                        // may have a different format than currentIdentity.Name
+                                        // (e.g., 'AD3\klucano@ucdavis.edu' vs 'klucano').
+                                        // Strip the domain prefix and compare both the base
+                                        // name and UPN prefix against the normalized identity.
+                                        string credUser = credentials.UserName;
+                                        int credSlash = credUser.IndexOf('\\');
+                                        if (credSlash >= 0)
+                                            credUser = credUser.Substring(credSlash + 1);
+                                        
+                                        nameMatch = string.Equals(credUser, currentUserName,
+                                            StringComparison.OrdinalIgnoreCase);
+                                        
+                                        // Also check if the credential username is our normalized
+                                        // name with a UPN suffix (e.g., 'klucano@ucdavis.edu').
+                                        if (!nameMatch)
+                                        {
+                                            int atIdx = credUser.IndexOf('@');
+                                            if (atIdx > 0)
+                                            {
+                                                string credBase = credUser.Substring(0, atIdx);
+                                                nameMatch = string.Equals(credBase, currentUserName,
+                                                    StringComparison.OrdinalIgnoreCase);
+                                            }
+                                        }
+                                    }
                                     else
                                     {
                                         nameMatch = (string.Compare(credentials.UserName, currentUserName, true) == 0);
