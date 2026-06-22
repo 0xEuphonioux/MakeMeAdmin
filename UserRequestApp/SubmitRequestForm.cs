@@ -209,6 +209,7 @@ namespace SinclairCC.MakeMeAdmin
 
                         do
                         {
+                            bool nameMatch;
                             do
                             {
                                 credentials = NativeMethods.GetCredentials(this.Handle, currentIdentity.Name, authenticationReturnCode);
@@ -219,7 +220,6 @@ namespace SinclairCC.MakeMeAdmin
                                     // return a base64 token (starts with '@@') instead of a
                                     // username. The credential provider already verified this
                                     // user's identity — skip comparison only for token creds.
-                                    bool nameMatch;
                                     if (isCloudAuth && !string.IsNullOrEmpty(credentials.UserName) &&
                                         credentials.UserName.StartsWith("@@", StringComparison.Ordinal))
                                     {
