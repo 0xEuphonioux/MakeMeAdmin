@@ -16,11 +16,22 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Install WiX Toolset v3
+        run: choco install wixtoolset -y
+
+      - name: Find WiX v3 directory
+        id: wixdir
+        run: |
+          $dir = Get-ChildItem "C:\Program Files (x86)\WiX Toolset v3.*" -Directory | Select-Object -First 1
+          echo "WIX_DIR=$($dir.FullName)\" >> $env:GITHUB_ENV
+          echo "WiX v3 at: $($dir.FullName)"
+        shell: pwsh
+
       - name: Restore NuGet packages
         run: dotnet restore MakeMeAdmin.sln
 
       - name: Build solution
-        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /t:Build
+        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /t:Build /p:WixToolDir="$env:WIX_DIR\"
 
       - name: Install WiX Toolset v4
         run: dotnet tool install --global wix
