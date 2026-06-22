@@ -16,16 +16,13 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Install WiX Toolset v4 FIRST
-        run: dotnet tool install --global wix
-
       - name: Install WiX Toolset v3
         run: choco install wixtoolset -y
 
       - name: Find WiX v3 directory
         run: |
           $dir = Get-ChildItem "C:\Program Files (x86)\WiX Toolset v3.*" -Directory | Select-Object -First 1
-          echo "WIX_DIR=$($dir.FullName)" >> $env:GITHUB_ENV
+          echo "WIX3_DIR=$($dir.FullName)" >> $env:GITHUB_ENV
           echo "WiX v3 at: $($dir.FullName)"
         shell: pwsh
 
@@ -33,22 +30,20 @@ jobs:
         continue-on-error: true
         run: |
           dotnet restore MakeMeAdmin.sln -p:RuntimeIdentifier=win-x64
-          msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX_DIR"
+          msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX3_DIR"
         shell: pwsh
 
-      - name: Verify service exe
-        run: |
-          Write-Host "Searching for MakeMeAdminService.exe:"
-          Get-ChildItem -Path Service\bin -Recurse -Filter MakeMeAdminService.exe -ErrorAction SilentlyContinue | Select-Object FullName
-        shell: pwsh
+      - name: Install WiX Toolset v4 (after build, before MSI)
+        run: dotnet tool install --global wix
 
       - name: Build MSI
         run: |
-          # Remove WiX v3 from PATH so WiX v4's wix.exe is found
+          # Remove WiX v3 from PATH and unset WIX env var that points to v3
           $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notlike '*WiX Toolset v3*' }) -join ';'
-          Write-Host "PATH cleaned. Looking for wix.exe:"
+          $env:WIX = $null
+          Write-Host "wix.exe resolves to:"
           Get-Command wix.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-          msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:WixToolDir="$env:WIX_DIR"
+          msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX3_DIR"
         shell: pwsh
 
       - name: Upload MSI artifact
