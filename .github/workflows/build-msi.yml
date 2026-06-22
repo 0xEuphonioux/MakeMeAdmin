@@ -23,6 +23,20 @@ jobs:
           echo "WiX v3 at: $($dir.FullName)"
         shell: pwsh
 
+      - name: Build all projects first
+        run: dotnet build MakeMeAdmin.sln -c Release -p:Platform=x64 -p:WixToolDir="$env:WIX_DIR"
+        shell: pwsh
+
+      - name: Verify service exe exists
+        run: |
+          if (Test-Path "Service\bin\Release x64\MakeMeAdminService.exe") {
+            echo "Service exe found!"
+          } else {
+            echo "Service exe NOT found, listing Service\bin\:"
+            Get-ChildItem Service\bin\ -Recurse -Filter *.exe
+          }
+        shell: pwsh
+
       - name: Install WiX Toolset v4
         run: dotnet tool install --global wix
 
