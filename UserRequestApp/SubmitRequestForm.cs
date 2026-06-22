@@ -186,11 +186,13 @@ namespace SinclairCC.MakeMeAdmin
                         }
 
                         // When authentication type is CloudAP (Entra ID / Windows Hello),
-                        // CredUnPackAuthenticationBuffer returns a base64-encoded security
-                        // token instead of a username (e.g., '@@EuAAAA...'). The credential
-                        // provider has already validated the user's identity through the
-                        // cloud authentication protocol, so we can skip the inner username
-                        // comparison entirely.
+                        // CredUnPackAuthenticationBuffer may return a base64-encoded
+                        // security token instead of a username (e.g., '@@EuAAAA...').
+                        // The credential provider has already validated the user's
+                        // identity through the cloud authentication protocol and the
+                        // dialog was pre-filled with the current user's name.
+                        // Only skip the username comparison when the unpacked value
+                        // is clearly a token (starts with '@@'), not a real username.
                         bool isCloudAuth = string.Equals(
                             currentIdentity.AuthenticationType, "CloudAP",
                             StringComparison.OrdinalIgnoreCase);
@@ -213,9 +215,20 @@ namespace SinclairCC.MakeMeAdmin
 
                                 if (null != credentials)
                                 {
-                                    bool nameMatch = isCloudAuth
-                                        ? true  // CloudAP: credential provider already verified identity
-                                        : (string.Compare(credentials.UserName, currentUserName, true) == 0);
+                                    // For CloudAP auth, CredUnPackAuthenticationBuffer may
+                                    // return a base64 token (starts with '@@') instead of a
+                                    // username. The credential provider already verified this
+                                    // user's identity — skip comparison only for token creds.
+                                    bool nameMatch;
+                                    if (isCloudAuth && !string.IsNullOrEmpty(credentials.UserName) &&
+                                        credentials.UserName.StartsWith("@@", StringComparison.Ordinal))
+                                    {
+                                        nameMatch = true; // Token credential: provider verified identity
+                                    }
+                                    else
+                                    {
+                                        nameMatch = (string.Compare(credentials.UserName, currentUserName, true) == 0);
+                                    }
 
                                     // Diagnostic
                                     try
