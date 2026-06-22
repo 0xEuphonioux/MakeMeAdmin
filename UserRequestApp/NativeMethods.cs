@@ -95,6 +95,38 @@ namespace SinclairCC.MakeMeAdmin
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern bool LogonUser(String username, String domain, IntPtr password, int logonType, int logonProvider, ref IntPtr token);
 
+        [DllImport("netapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern int NetGetAadJoinInformation(
+            [MarshalAs(UnmanagedType.LPWStr)] string pcszTenantId,
+            out IntPtr ppJoinInfo);
+
+        [DllImport("netapi32.dll", CharSet = CharSet.Unicode)]
+        private static extern int NetApiBufferFree(IntPtr buffer);
+
+        // DSREG_JOIN_TYPE values
+        private const int DSREG_JOIN_TYPE_UNKNOWN = 0;
+        private const int DSREG_JOIN_TYPE_AAD = 1;          // Entra ID joined
+        private const int DSREG_JOIN_TYPE_HYBRID_AZURE_AD = 2; // Entra ID hybrid joined
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct DSREG_JOIN_INFO
+        {
+            public int joinType;
+            public IntPtr pJoinCertificate;
+            public int joinCertificateLength;
+            public IntPtr pszDeviceId;
+            public IntPtr pszIdpDomain;
+            public IntPtr pszTenantDisplayName;
+            public IntPtr pszUserId;
+            public IntPtr pszUserEmail;
+            public IntPtr pszTenantId;
+            public IntPtr pszDeviceDisplayName;
+            public int deviceKeyType;
+            public int deviceKeyLength;
+            public IntPtr pDeviceKey;
+            public IntPtr pszUserKeyId;
+        }
+
         /*
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -234,6 +266,18 @@ namespace SinclairCC.MakeMeAdmin
                 return 0;
             }
 
+            // On Entra ID-joined or Entra hybrid-joined devices, LogonUser may
+            // fail because:
+            //   - The credential dialog authenticates via cloud PRT, not NTLM/Kerberos
+            //   - The unpacked domain is the on-prem NETBIOS name but no DC is reachable
+            //   - The user may have authenticated via Windows Hello (key-based, not password)
+            // We check the device's Entra ID join state to skip LogonUser when
+            // the device is cloud-managed.
+            if (IsDeviceEntraJoined())
+            {
+                return 0;
+            }
+
             IntPtr tokenHandle = IntPtr.Zero;
             IntPtr passwordPtr = IntPtr.Zero;
             bool returnValue = false;
@@ -260,16 +304,50 @@ namespace SinclairCC.MakeMeAdmin
             CloseHandle(tokenHandle);
 
             return error;
+        }
 
-            /*
-            // Throw an exception if an error occurred.
-            if (error != 0)
+        /// <summary>
+        /// Determines whether the current device is joined to Microsoft Entra ID
+        /// (formerly Azure AD), either as a pure cloud join or hybrid join.
+        /// </summary>
+        /// <returns>true if the device is Entra ID joined or Entra hybrid joined.</returns>
+        private static bool IsDeviceEntraJoined()
+        {
+            try
             {
-                throw new System.ComponentModel.Win32Exception(error);
-            }
+                int result = NetGetAadJoinInformation(null, out IntPtr pJoinInfo);
+                if (result != 0)
+                {
+                    // Function not supported (pre-Win10) or other error.
+                    // We can't determine join state; fall back to LogonUser.
+                    return false;
+                }
 
-            return returnValue;
-            */
+                if (pJoinInfo == IntPtr.Zero)
+                {
+                    return false;
+                }
+
+                try
+                {
+                    DSREG_JOIN_INFO joinInfo = (DSREG_JOIN_INFO)Marshal.PtrToStructure(
+                        pJoinInfo, typeof(DSREG_JOIN_INFO));
+
+                    // DSREG_JOIN_TYPE_AAD (1) = Entra ID joined
+                    // DSREG_JOIN_TYPE_HYBRID_AZURE_AD (2) = Entra hybrid joined
+                    return (joinInfo.joinType == DSREG_JOIN_TYPE_AAD ||
+                            joinInfo.joinType == DSREG_JOIN_TYPE_HYBRID_AZURE_AD);
+                }
+                finally
+                {
+                    NetApiBufferFree(pJoinInfo);
+                }
+            }
+            catch
+            {
+                // If we can't determine join state, fall back to LogonUser behavior.
+                return false;
+            }
         }
     }
 }
