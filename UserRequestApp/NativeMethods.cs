@@ -273,8 +273,17 @@ namespace SinclairCC.MakeMeAdmin
             //   - The user may have authenticated via Windows Hello (key-based, not password)
             // We check the device's Entra ID join state to skip LogonUser when
             // the device is cloud-managed.
-            if (IsDeviceEntraJoined())
+            bool isEntraJoined = IsDeviceEntraJoined();
+            ApplicationLog.WriteEvent(
+                string.Format("Auth: ValidateCredentials domain='{0}', isEntraJoined={1}",
+                    domain, isEntraJoined),
+                EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
+
+            if (isEntraJoined)
             {
+                ApplicationLog.WriteEvent(
+                    "Auth: Skipping LogonUser (device is Entra-joined or hybrid-joined)",
+                    EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
                 return 0;
             }
 

@@ -185,11 +185,31 @@ namespace SinclairCC.MakeMeAdmin
                             currentUserName = currentUserName.Substring(backslashIdx + 1);
                         }
 
+                        ApplicationLog.WriteEvent(
+                            string.Format("Auth: Identity.Name='{0}', normalized='{1}'; AuthType='{2}'",
+                                currentIdentity.Name, currentUserName, currentIdentity.AuthenticationType),
+                            EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
+
                         do
                         {
                             do
                             {
                                 credentials = NativeMethods.GetCredentials(this.Handle, currentIdentity.Name, authenticationReturnCode);
+
+                                if (null != credentials)
+                                {
+                                    bool nameMatch = (string.Compare(credentials.UserName, currentUserName, true) == 0);
+                                    ApplicationLog.WriteEvent(
+                                        string.Format("Auth: Creds.UserName='{0}', Creds.Domain='{1}', nameMatch={2}, authReturnCode={3}",
+                                            credentials.UserName, credentials.Domain, nameMatch, authenticationReturnCode),
+                                        EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
+                                }
+                                else
+                                {
+                                    ApplicationLog.WriteEvent(
+                                        "Auth: GetCredentials returned null (user cancelled or error)",
+                                        EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
+                                }
                             } while ((null != credentials) && (string.Compare(credentials.UserName, currentUserName, true) != 0));
 
                             if (null != credentials)
