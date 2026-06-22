@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     
     steps:
       - name: Checkout
@@ -28,10 +28,10 @@ jobs:
         shell: pwsh
 
       - name: Restore NuGet packages
-        run: dotnet restore MakeMeAdmin.sln
+        run: nuget restore MakeMeAdmin.sln
 
       - name: Build solution
-        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /t:Build /p:WixToolDir="$env:WIX_DIR\"
+        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /p:WixToolDir="$env:WIX_DIR\"
 
       - name: Install WiX Toolset v4
         run: dotnet tool install --global wix
