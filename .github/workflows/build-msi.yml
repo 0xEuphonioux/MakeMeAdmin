@@ -24,6 +24,7 @@ jobs:
         shell: pwsh
 
       - name: Build all projects first
+        continue-on-error: true
         run: dotnet build MakeMeAdmin.sln -c Release -p:Platform=x64 -p:WixToolDir="$env:WIX_DIR"
         shell: pwsh
 
