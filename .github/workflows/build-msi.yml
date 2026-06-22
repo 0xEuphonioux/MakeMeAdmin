@@ -37,7 +37,9 @@ jobs:
         shell: pwsh
 
       - name: Build MSI
-        run: msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:WixToolDir="$env:WIX_DIR"
+        run: |
+          $wix4Path = "$env:USERPROFILE\.dotnet\tools"
+          msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:WixToolDir="$env:WIX_DIR" /p:WixToolPath="$wix4Path"
         shell: pwsh
 
       - name: Upload MSI artifact
