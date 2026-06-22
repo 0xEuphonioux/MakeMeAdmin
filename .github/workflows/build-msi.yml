@@ -25,11 +25,16 @@ jobs:
           echo "WIX3_DIR=$($dir.FullName)" >> $env:GITHUB_ENV
         shell: pwsh
 
-      - name: Restore and build all projects
-        continue-on-error: true
+      - name: Restore NuGet packages
+        run: dotnet restore MakeMeAdmin.sln -p:RuntimeIdentifier=win-x64
+        shell: pwsh
+
+      - name: Build required projects
         run: |
-          dotnet restore MakeMeAdmin.sln -p:RuntimeIdentifier=win-x64
-          msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:Wix3Dir="$env:WIX3_DIR"
+          msbuild UserRequestApp/LocalUI.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
+          msbuild RemoteUI/RemoteUI.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
+          msbuild Service/Service.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
+          msbuild WiXCustomAction/WiXCustomAction.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:Wix3Dir="$env:WIX3_DIR"
         shell: pwsh
 
       - name: Install WiX Toolset v4
