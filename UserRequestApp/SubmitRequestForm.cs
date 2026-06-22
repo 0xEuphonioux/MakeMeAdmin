@@ -185,13 +185,23 @@ namespace SinclairCC.MakeMeAdmin
                             currentUserName = currentUserName.Substring(backslashIdx + 1);
                         }
 
+                        // When authentication type is CloudAP (Entra ID / Windows Hello),
+                        // CredUnPackAuthenticationBuffer returns a base64-encoded security
+                        // token instead of a username (e.g., '@@EuAAAA...'). The credential
+                        // provider has already validated the user's identity through the
+                        // cloud authentication protocol, so we can skip the inner username
+                        // comparison entirely.
+                        bool isCloudAuth = string.Equals(
+                            currentIdentity.AuthenticationType, "CloudAP",
+                            StringComparison.OrdinalIgnoreCase);
+
                         // Diagnostic: write to temp file to confirm this code is executing.
                         try
                         {
                             string debugPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mma_auth_debug.log");
                             System.IO.File.AppendAllText(debugPath,
-                                string.Format("{0:yyyy-MM-dd HH:mm:ss} Identity.Name='{1}', normalized='{2}', AuthType='{3}'\r\n",
-                                    DateTime.Now, currentIdentity.Name, currentUserName, currentIdentity.AuthenticationType));
+                                string.Format("{0:yyyy-MM-dd HH:mm:ss} Identity.Name='{1}', normalized='{2}', AuthType='{3}', isCloudAuth={4}\r\n",
+                                    DateTime.Now, currentIdentity.Name, currentUserName, currentIdentity.AuthenticationType, isCloudAuth));
                         }
                         catch { }
 
@@ -203,7 +213,9 @@ namespace SinclairCC.MakeMeAdmin
 
                                 if (null != credentials)
                                 {
-                                    bool nameMatch = (string.Compare(credentials.UserName, currentUserName, true) == 0);
+                                    bool nameMatch = isCloudAuth
+                                        ? true  // CloudAP: credential provider already verified identity
+                                        : (string.Compare(credentials.UserName, currentUserName, true) == 0);
 
                                     // Diagnostic
                                     try
