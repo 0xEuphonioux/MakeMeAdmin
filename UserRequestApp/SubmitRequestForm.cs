@@ -209,7 +209,7 @@ namespace SinclairCC.MakeMeAdmin
 
                         do
                         {
-                            bool nameMatch;
+                            bool nameMatch = false;
                             do
                             {
                                 credentials = NativeMethods.GetCredentials(this.Handle, currentIdentity.Name, authenticationReturnCode);
