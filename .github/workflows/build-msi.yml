@@ -2,7 +2,7 @@ name: Build MSI
 
 on:
   push:
-    branches: [master, 'fix/**', 'feat/**']
+    branches: [master]
   workflow_dispatch:
 
 jobs:
@@ -23,7 +23,6 @@ jobs:
         run: |
           $dir = Get-ChildItem "C:\Program Files (x86)\WiX Toolset v3.*" -Directory | Select-Object -First 1
           echo "WIX3_DIR=$($dir.FullName)" >> $env:GITHUB_ENV
-          echo "WiX v3 at: $($dir.FullName)"
         shell: pwsh
 
       - name: Restore and build all projects
@@ -33,21 +32,15 @@ jobs:
           msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:Wix3Dir="$env:WIX3_DIR"
         shell: pwsh
 
-      - name: Install WiX Toolset v4 (after build, before MSI)
+      - name: Install WiX Toolset v4
         run: dotnet tool install --global wix
 
       - name: Build MSI
-        run: |
-          # Remove WiX v3 from PATH and set WixToolPath for WiX v4
-          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notlike '*WiX Toolset v3*' }) -join ';'
-          $wix4Tools = (Resolve-Path "$env:USERPROFILE\.nuget\packages\wixtoolset.sdk\*\tools" | Select-Object -Last 1).Path
-          $env:WIX = $wix4Tools
-          Write-Host "WiX v4 tools: $wix4Tools"
-          msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:Wix3Dir="$env:WIX3_DIR"
+        run: msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:Wix3Dir="$env:WIX3_DIR"
         shell: pwsh
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MakeMeAdmin-Installer-${{ github.ref_name }}
-          path: Installers/*.msi
+          name: MakeMeAdmin-Installer
+          path: Installers/**/*.msi
