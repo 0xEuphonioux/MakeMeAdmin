@@ -2,7 +2,7 @@ name: Build MSI
 
 on:
   push:
-    branches: [main, master, 'fix/**', 'feat/**']
+    branches: [master, 'fix/**', 'feat/**']
   workflow_dispatch:
 
 jobs:
