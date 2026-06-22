@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-latest
     
     steps:
       - name: Checkout
@@ -20,7 +20,6 @@ jobs:
         run: choco install wixtoolset -y
 
       - name: Find WiX v3 directory
-        id: wixdir
         run: |
           $dir = Get-ChildItem "C:\Program Files (x86)\WiX Toolset v3.*" -Directory | Select-Object -First 1
           echo "WIX_DIR=$($dir.FullName)" >> $env:GITHUB_ENV
@@ -28,10 +27,10 @@ jobs:
         shell: pwsh
 
       - name: Restore NuGet packages
-        run: nuget restore MakeMeAdmin.sln
+        run: dotnet restore MakeMeAdmin.sln -p:RuntimeIdentifier=win-x64
 
       - name: Build solution
-        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /p:WixToolDir="$env:WIX_DIR"
+        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX_DIR"
         shell: pwsh
 
       - name: Install WiX Toolset v4
