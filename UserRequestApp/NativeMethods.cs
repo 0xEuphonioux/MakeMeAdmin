@@ -274,24 +274,9 @@ namespace SinclairCC.MakeMeAdmin
             // We check the device's Entra ID join state to skip LogonUser when
             // the device is cloud-managed.
             bool isEntraJoined = IsDeviceEntraJoined();
-            try
-            {
-                string debugPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mma_auth_debug.log");
-                System.IO.File.AppendAllText(debugPath,
-                    string.Format("{0:yyyy-MM-dd HH:mm:ss} ValidateCredentials domain='{1}', isEntraJoined={2}\r\n",
-                        DateTime.Now, domain, isEntraJoined));
-            }
-            catch { }
 
             if (isEntraJoined)
             {
-                try
-                {
-                    string debugPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mma_auth_debug.log");
-                    System.IO.File.AppendAllText(debugPath,
-                        string.Format("{0:yyyy-MM-dd HH:mm:ss} Skipping LogonUser (device is Entra-joined)\r\n", DateTime.Now));
-                }
-                catch { }
                 return 0;
             }
 
@@ -302,15 +287,6 @@ namespace SinclairCC.MakeMeAdmin
 
             // Marshal the SecureString to unmanaged memory.
             passwordPtr = Marshal.SecureStringToGlobalAllocUnicode(credentials.SecurePassword);
-
-            try
-            {
-                string debugPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mma_auth_debug.log");
-                System.IO.File.AppendAllText(debugPath,
-                    string.Format("{0:yyyy-MM-dd HH:mm:ss} Calling LogonUser('{1}', '{2}')\r\n",
-                        DateTime.Now, userName, domain));
-            }
-            catch { }
 
             // Pass LogonUser the unmanaged (and decrypted) copy of the password.
             returnValue = LogonUser(userName, domain, passwordPtr,

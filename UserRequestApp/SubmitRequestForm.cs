@@ -197,16 +197,6 @@ namespace SinclairCC.MakeMeAdmin
                             currentIdentity.AuthenticationType, "CloudAP",
                             StringComparison.OrdinalIgnoreCase);
 
-                        // Diagnostic: write to temp file to confirm this code is executing.
-                        try
-                        {
-                            string debugPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mma_auth_debug.log");
-                            System.IO.File.AppendAllText(debugPath,
-                                string.Format("{0:yyyy-MM-dd HH:mm:ss} Identity.Name='{1}', normalized='{2}', AuthType='{3}', isCloudAuth={4}\r\n",
-                                    DateTime.Now, currentIdentity.Name, currentUserName, currentIdentity.AuthenticationType, isCloudAuth));
-                        }
-                        catch { }
-
                         do
                         {
                             bool nameMatch = false;
@@ -257,27 +247,6 @@ namespace SinclairCC.MakeMeAdmin
                                     {
                                         nameMatch = (string.Compare(credentials.UserName, currentUserName, true) == 0);
                                     }
-
-                                    // Diagnostic
-                                    try
-                                    {
-                                        string debugPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mma_auth_debug.log");
-                                        System.IO.File.AppendAllText(debugPath,
-                                            string.Format("{0:yyyy-MM-dd HH:mm:ss} Creds.UserName='{1}', Domain='{2}', nameMatch={3}, code={4}\r\n",
-                                                DateTime.Now, credentials.UserName, credentials.Domain, nameMatch, authenticationReturnCode));
-                                    }
-                                    catch { }
-
-                                    ApplicationLog.WriteEvent(
-                                        string.Format("Auth: Creds.UserName='{0}', Creds.Domain='{1}', nameMatch={2}, authReturnCode={3}",
-                                            credentials.UserName, credentials.Domain, nameMatch, authenticationReturnCode),
-                                        EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
-                                }
-                                else
-                                {
-                                    ApplicationLog.WriteEvent(
-                                        "Auth: GetCredentials returned null (user cancelled or error)",
-                                        EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
                                 }
                             } while ((null != credentials) && (!nameMatch));
 
