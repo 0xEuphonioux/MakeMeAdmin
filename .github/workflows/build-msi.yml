@@ -17,10 +17,10 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Restore NuGet packages
-        run: nuget restore MakeMeAdmin.sln
+        run: dotnet restore MakeMeAdmin.sln
 
       - name: Build solution
-        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m
+        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /t:Build
 
       - name: Install WiX Toolset
         run: dotnet tool install --global wix
