@@ -16,6 +16,9 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Install WiX Toolset v4 FIRST
+        run: dotnet tool install --global wix
+
       - name: Install WiX Toolset v3
         run: choco install wixtoolset -y
 
@@ -33,11 +36,8 @@ jobs:
           msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX_DIR"
         shell: pwsh
 
-      - name: Install WiX Toolset v4
-        run: dotnet tool install --global wix
-
       - name: Build MSI
-        run: dotnet build Setup/Setup.wixproj --no-restore --no-dependencies -c Release -p:Platform=x64 -p:WixToolDir="$env:WIX_DIR"
+        run: dotnet build Setup/Setup.wixproj --no-restore -c Release -p:Platform=x64 -p:WixToolDir="$env:WIX_DIR"
         shell: pwsh
 
       - name: Upload MSI artifact
