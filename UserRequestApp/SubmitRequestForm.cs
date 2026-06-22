@@ -173,12 +173,24 @@ namespace SinclairCC.MakeMeAdmin
                     WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent();
                     try
                     {
+                        // Normalize the current user's identity for username matching.
+                        // On Entra ID / hybrid-joined devices, WindowsIdentity.GetCurrent().Name
+                        // returns "AzureAD\user@domain.com", but CredUnPackAuthenticationBuffer
+                        // returns just "user@domain.com" (no domain prefix). Also handle the
+                        // on-prem format "DOMAIN\user" → "user".
+                        string currentUserName = currentIdentity.Name;
+                        int backslashIdx = currentUserName.IndexOf('\\');
+                        if (backslashIdx >= 0)
+                        {
+                            currentUserName = currentUserName.Substring(backslashIdx + 1);
+                        }
+
                         do
                         {
                             do
                             {
                                 credentials = NativeMethods.GetCredentials(this.Handle, currentIdentity.Name, authenticationReturnCode);
-                            } while ((null != credentials) && (string.Compare(credentials.UserName, currentIdentity.Name, true) != 0));
+                            } while ((null != credentials) && (string.Compare(credentials.UserName, currentUserName, true) != 0));
 
                             if (null != credentials)
                             {
