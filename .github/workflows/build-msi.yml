@@ -23,7 +23,7 @@ jobs:
         id: wixdir
         run: |
           $dir = Get-ChildItem "C:\Program Files (x86)\WiX Toolset v3.*" -Directory | Select-Object -First 1
-          echo "WIX_DIR=$($dir.FullName)\" >> $env:GITHUB_ENV
+          echo "WIX_DIR=$($dir.FullName)" >> $env:GITHUB_ENV
           echo "WiX v3 at: $($dir.FullName)"
         shell: pwsh
 
@@ -31,7 +31,8 @@ jobs:
         run: nuget restore MakeMeAdmin.sln
 
       - name: Build solution
-        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /p:WixToolDir="$env:WIX_DIR\"
+        run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /p:WixToolDir="$env:WIX_DIR"
+        shell: pwsh
 
       - name: Install WiX Toolset v4
         run: dotnet tool install --global wix
