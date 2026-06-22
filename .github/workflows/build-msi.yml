@@ -16,13 +16,16 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Install WiX Toolset v3 (required by WiXCustomAction project)
+        run: choco install wixtoolset -y
+
       - name: Restore NuGet packages
         run: dotnet restore MakeMeAdmin.sln
 
       - name: Build solution
         run: msbuild MakeMeAdmin.sln /p:Configuration=Release /p:Platform=x64 /m /t:Build
 
-      - name: Install WiX Toolset
+      - name: Install WiX Toolset v4 (for MSI packaging)
         run: dotnet tool install --global wix
 
       - name: Build MSI
