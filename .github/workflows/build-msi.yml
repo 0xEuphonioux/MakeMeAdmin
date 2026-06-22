@@ -19,6 +19,23 @@ jobs:
       - name: Install WiX Toolset v3 (required by WiXCustomAction project)
         run: choco install wixtoolset -y
 
+      - name: Set WixCATargetsPath
+        run: |
+          $wixDir = Resolve-Path "C:\Program Files (x86)\WiX Toolset v3.*" | Select-Object -First 1
+          if (-not $wixDir) { $wixDir = "C:\Program Files (x86)\WiX Toolset v3.11" }
+          $targetsPath = Join-Path $wixDir "bin\Wix.CA.targets"
+          if (Test-Path $targetsPath) {
+            echo "WixCATargetsPath=$targetsPath" >> $env:GITHUB_ENV
+            echo "WiX v3 targets: $targetsPath"
+          } else {
+            echo "WiX v3 targets not found, checking alternative paths..."
+            Get-ChildItem "C:\Program Files (x86)" -Filter "Wix.CA.targets" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+              echo "WixCATargetsPath=$($_.FullName)" >> $env:GITHUB_ENV
+              echo "Found: $($_.FullName)"
+            }
+          }
+        shell: pwsh
+
       - name: Restore NuGet packages
         run: dotnet restore MakeMeAdmin.sln
 
