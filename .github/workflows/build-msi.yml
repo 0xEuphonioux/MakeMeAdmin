@@ -38,13 +38,12 @@ jobs:
 
       - name: Build MSI
         run: |
-          # Remove WiX v3 from PATH
+          # Remove WiX v3 from PATH and set WixToolPath for WiX v4
           $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notlike '*WiX Toolset v3*' }) -join ';'
-          # Override WIX to point to WiX v4 NuGet tools
-          $wix4NuGet = Resolve-Path "$env:USERPROFILE\.nuget\packages\wixtoolset.sdk\*\tools" | Select-Object -Last 1
-          $env:WIX = $wix4NuGet.Path
-          Write-Host "WIX env set to: $env:WIX"
-          msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX3_DIR"
+          $wix4Tools = (Resolve-Path "$env:USERPROFILE\.nuget\packages\wixtoolset.sdk\*\tools" | Select-Object -Last 1).Path
+          $env:WIX = $wix4Tools
+          Write-Host "WiX v4 tools: $wix4Tools"
+          msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX3_DIR" /p:WixToolPath=$wix4Tools
         shell: pwsh
 
       - name: Upload MSI artifact
