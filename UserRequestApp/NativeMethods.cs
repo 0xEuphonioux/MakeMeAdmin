@@ -224,6 +224,15 @@ namespace SinclairCC.MakeMeAdmin
                 userName = userName.Substring(slashIndex + 1);
             }
 
+            // AzureAD / Entra ID accounts cannot be validated with LogonUser
+            // (LOGON32_LOGON_NETWORK relies on NTLM/Kerberos, which AzureAD
+            // does not support). The credential dialog (CredUIPromptForWindowsCredentials)
+            // already validated these credentials through the AzureAD credential
+            // provider, so we can skip the redundant LogonUser check.
+            if (string.Equals(domain, "AzureAD", StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
 
             IntPtr tokenHandle = IntPtr.Zero;
             IntPtr passwordPtr = IntPtr.Zero;

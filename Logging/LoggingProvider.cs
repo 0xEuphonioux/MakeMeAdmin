@@ -46,6 +46,18 @@ namespace SinclairCC.MakeMeAdmin
             }
 
             ElevatedProcessDetected(elevatedProcess.ImageFileName, elevatedProcess.CreateTime, elevatedProcess.UserSIDString, elevatedProcess.SessionID, elevationTypeString, elevatedProcess.CommandLine, elevatedProcess.ProcessID);
+
+            // Also forward to syslog servers (the ETW event only writes to local Windows Event Log).
+            string message = string.Format(
+                "Process {0} created at {1} by user {2} in session {3} with an elevation type of {4}.\r\ncommand line: \"{5}\"\r\nprocess ID: \"{6}\"",
+                elevatedProcess.ImageFileName,
+                elevatedProcess.CreateTime,
+                elevatedProcess.UserSIDString,
+                elevatedProcess.SessionID,
+                elevationTypeString,
+                elevatedProcess.CommandLine,
+                elevatedProcess.ProcessID);
+            ApplicationLog.WriteEvent(message, EventID.ElevatedProcess, System.Diagnostics.EventLogEntryType.Information);
         }
         
         // TODO: Localize the Message?
