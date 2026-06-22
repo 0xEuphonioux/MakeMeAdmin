@@ -38,11 +38,12 @@ jobs:
 
       - name: Build MSI
         run: |
-          # Remove WiX v3 from PATH and unset WIX env var that points to v3
+          # Remove WiX v3 from PATH
           $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notlike '*WiX Toolset v3*' }) -join ';'
-          $env:WIX = $null
-          Write-Host "wix.exe resolves to:"
-          Get-Command wix.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+          # Override WIX to point to WiX v4 NuGet tools
+          $wix4NuGet = Resolve-Path "$env:USERPROFILE\.nuget\packages\wixtoolset.sdk\*\tools" | Select-Object -Last 1
+          $env:WIX = $wix4NuGet.Path
+          Write-Host "WIX env set to: $env:WIX"
           msbuild Setup/Setup.wixproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:WixToolDir="$env:WIX3_DIR"
         shell: pwsh
 
