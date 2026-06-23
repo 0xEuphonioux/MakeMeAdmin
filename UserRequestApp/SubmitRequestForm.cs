@@ -24,6 +24,7 @@ namespace SinclairCC.MakeMeAdmin
     using System.Reflection;
     using System.Security.Principal;
     using System.ServiceModel;
+    using System.Threading;
     using System.Windows.Forms;
 
     /// <summary>
@@ -159,6 +160,29 @@ namespace SinclairCC.MakeMeAdmin
             }
         }
 
+        /// <summary>
+        /// Returns the sanitized username for logging purposes, replacing
+        /// CloudAP credential token blobs (e.g., "@@EuAAAA...") with the
+        /// current user's identity to prevent sensitive tokens from
+        /// appearing in event logs or syslog output.
+        /// </summary>
+        private static string GetSanitizedUsernameForLogging(System.Net.NetworkCredential credentials, string fallbackName)
+        {
+            if (null == credentials || string.IsNullOrEmpty(credentials.UserName))
+            {
+                return fallbackName;
+            }
+
+            // CloudAP tokens start with "@@" — these are LSA-protected
+            // credential blobs that must never be logged.
+            if (credentials.UserName.StartsWith("@@", StringComparison.Ordinal))
+            {
+                return fallbackName;
+            }
+
+            return credentials.UserName;
+        }
+
         private bool AuthenticationSuccessful
         {
             get
@@ -253,6 +277,13 @@ namespace SinclairCC.MakeMeAdmin
                             if (null != credentials)
                             {
                                 authenticationReturnCode = NativeMethods.ValidateCredentials(credentials);
+                            }
+
+                            // Rate-limit authentication retry attempts to prevent
+                            // denial-of-service via rapid credential entry.
+                            if ((null != credentials) && (authenticationReturnCode != 0))
+                            {
+                                Thread.Sleep(1000);
                             }
                         } while ((null != credentials) && (authenticationReturnCode != 0));
                     }
