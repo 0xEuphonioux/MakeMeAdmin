@@ -227,7 +227,19 @@ namespace SinclairCC.MakeMeAdmin
                             bool isCloudAPToken = false;
                             do
                             {
-                                credentials = NativeMethods.GetCredentials(this.Handle, currentIdentity.Name, authenticationReturnCode);
+                                // When Windows Hello is enabled on a CloudAP device, do NOT
+                                // pre-fill the username in the credential dialog.
+                                // Passing a pre-filled identity buffer to CredUIPromptForWindowsCredentials
+                                // causes the CloudAP provider to auto-authenticate using the existing
+                                // Windows Hello session — skipping PIN validation entirely.
+                                // With a null hint, the provider must explicitly validate
+                                // whatever credential the user provides (PIN, fingerprint, password).
+                                //
+                                // When Hello is disabled by policy, pre-fill normally —
+                                // we're forcing password auth which needs the username hint.
+                                bool skipPreFill = isCloudAuth && Settings.AllowWindowsHelloAuthentication;
+                                string credentialUsernameHint = skipPreFill ? null : currentIdentity.Name;
+                                credentials = NativeMethods.GetCredentials(this.Handle, credentialUsernameHint, authenticationReturnCode);
 
                                 if (null != credentials)
                                 {
