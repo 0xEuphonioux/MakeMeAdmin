@@ -235,8 +235,11 @@ namespace SinclairCC.MakeMeAdmin
                                     // return a base64 token (starts with '@@') instead of a
                                     // username. The credential provider already verified this
                                     // user's identity — skip comparison only for token creds.
+                                    // When Windows Hello is disabled by policy, reject the
+                                    // token so the user must authenticate with a password.
                                     if (isCloudAuth && !string.IsNullOrEmpty(credentials.UserName) &&
-                                        credentials.UserName.StartsWith("@@", StringComparison.Ordinal))
+                                        credentials.UserName.StartsWith("@@", StringComparison.Ordinal) &&
+                                        Settings.AllowWindowsHelloAuthentication)
                                     {
                                         nameMatch = true; // Token credential: provider verified identity
                                         isCloudAPToken = true;

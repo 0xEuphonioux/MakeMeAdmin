@@ -675,6 +675,32 @@ namespace SinclairCC.MakeMeAdmin
         }
 
 
+        public static bool AllowWindowsHelloAuthentication
+        {
+            get
+            {
+                int? policySetting = GetDWord(PolicyRegistryKeyPath, null, "Allow Windows Hello Authentication");
+                int? preferenceSetting = GetDWord(PreferenceRegistryKeyPath, null, "Allow Windows Hello Authentication");
+                if (policySetting.HasValue)
+                { // The policy setting has a value. Go with whatever it says.
+                    return Convert.ToBoolean(policySetting.Value);
+                }
+                else if (preferenceSetting.HasValue)
+                { // The preference setting has a value. Go with whatever it says.
+                    return Convert.ToBoolean(preferenceSetting.Value);
+                }
+                else
+                { // Neither the policy nor the preference registry entries had a value. Return a default value of true.
+                    return true;
+                }
+            }
+            set
+            {
+                SetDWord(PreferenceRegistryKeyPath, null, "Allow Windows Hello Authentication", Convert.ToInt32(value));
+            }
+        }
+
+
         // TODO: i18n.
         public static string[] CannedReasons
         {

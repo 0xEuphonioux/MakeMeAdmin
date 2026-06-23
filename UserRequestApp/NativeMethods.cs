@@ -179,11 +179,7 @@ namespace SinclairCC.MakeMeAdmin
                                                            out outCredBuffer,
                                                            out outCredSize,
                                                            ref save,
-                                                           0x200 | 0x1000);  // CREDUIWIN_ENUMERATE_CURRENT_USER | CREDUIWIN_SECURE_PROMPT
-            // CREDUIWIN_SECURE_PROMPT (0x1000) forces the credential provider to
-            // always prompt for credentials and disables session auto-logon.
-            // This prevents Windows Hello (PIN/biometric) from reusing an existing
-            // session to auto-authenticate, which would accept any PIN input.
+                                                           0x200);  // CREDUIWIN_ENUMERATE_CURRENT_USER
 
             if (inCredBuffer != IntPtr.Zero)
             {
