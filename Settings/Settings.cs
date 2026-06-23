@@ -664,8 +664,8 @@ namespace SinclairCC.MakeMeAdmin
                     return Convert.ToBoolean(preferenceSetting.Value);
                 }
                 else
-                { // Neither the policy nor the preference registry entries had a value. Return a default value of true.
-                    return true;
+                { // Neither the policy nor the preference registry entries had a value. Return a default value of false.
+                    return false;
                 }
             }
             set

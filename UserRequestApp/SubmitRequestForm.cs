@@ -337,7 +337,9 @@ namespace SinclairCC.MakeMeAdmin
 
                     case ReasonPrompt.Optional:
 
-                        // The reason dialog is optional, so rights are always allowed.
+                        // The reason dialog is optional, so rights are allowed by default.
+                        // However, clicking Cancel is an explicit user choice to abort the
+                        // operation and must be respected.
                         dialogSatisfied = true;
 
                         if ((Settings.AllowFreeTextReason) || ((Settings.CannedReasons != null) && (Settings.CannedReasons.Length > 0)))
@@ -347,7 +349,8 @@ namespace SinclairCC.MakeMeAdmin
                                 switch (reasonDialog.ShowDialog(this))
                                 {
                                     case DialogResult.Cancel:
-                                        // User did not provide a reason, but is not obligated to do so.
+                                        // User chose to cancel the entire operation.
+                                        dialogSatisfied = false;
                                         break;
                                     case DialogResult.OK:
                                         ApplicationLog.WriteEvent(string.Format(Properties.Resources.ReasonProvidedByUser, reasonDialog.Reason), EventID.ReasonProvidedByUser, System.Diagnostics.EventLogEntryType.Information);
@@ -408,7 +411,7 @@ namespace SinclairCC.MakeMeAdmin
                     default:
                         // TODO: i18n
                         ApplicationLog.WriteEvent(string.Format("Unexpected value for the reason prompt setting: {0:N0}", ((int)(Settings.PromptForReason))), EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Warning);
-                        dialogSatisfied = true;
+                        dialogSatisfied = false;
                         break;
                 }
 
