@@ -224,6 +224,7 @@ namespace SinclairCC.MakeMeAdmin
                         do
                         {
                             bool nameMatch = false;
+                            bool isCloudAPToken = false;
                             do
                             {
                                 credentials = NativeMethods.GetCredentials(this.Handle, currentIdentity.Name, authenticationReturnCode);
@@ -238,6 +239,7 @@ namespace SinclairCC.MakeMeAdmin
                                         credentials.UserName.StartsWith("@@", StringComparison.Ordinal))
                                     {
                                         nameMatch = true; // Token credential: provider verified identity
+                                        isCloudAPToken = true;
                                     }
                                     else if (isCloudAuth)
                                     {
@@ -276,7 +278,19 @@ namespace SinclairCC.MakeMeAdmin
 
                             if (null != credentials)
                             {
-                                authenticationReturnCode = NativeMethods.ValidateCredentials(credentials);
+                                // CloudAP tokens (@@ prefix) come from Windows Hello /
+                                // biometric authentication — the credential provider
+                                // has already cryptographically verified the user's
+                                // identity. LogonUser is not applicable for token-based
+                                // auth and would fail with NTLM errors.
+                                if (isCloudAPToken)
+                                {
+                                    authenticationReturnCode = 0;
+                                }
+                                else
+                                {
+                                    authenticationReturnCode = NativeMethods.ValidateCredentials(credentials);
+                                }
                             }
 
                             // Rate-limit authentication retry attempts to prevent

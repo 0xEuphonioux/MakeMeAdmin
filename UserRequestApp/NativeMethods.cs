@@ -266,20 +266,13 @@ namespace SinclairCC.MakeMeAdmin
                 return 0;
             }
 
-            // On Entra ID-joined or Entra hybrid-joined devices, LogonUser may
-            // fail because:
-            //   - The credential dialog authenticates via cloud PRT, not NTLM/Kerberos
-            //   - The unpacked domain is the on-prem NETBIOS name but no DC is reachable
-            //   - The user may have authenticated via Windows Hello (key-based, not password)
-            // We check the device's Entra ID join state to skip LogonUser when
-            // the device is cloud-managed.
-            bool isEntraJoined = IsDeviceEntraJoined();
-
-            if (isEntraJoined)
-            {
-                return 0;
-            }
-
+            // Execute LogonUser to validate the password against the DC or
+            // local SAM. We do NOT blanket-bypass validation on Entra ID-joined
+            // devices, because CloudAP/Windows Hello may auto-authenticate via
+            // cached PRT/biometrics regardless of what was typed in the dialog,
+            // effectively bypassing the password check. Only CloudAP tokens
+            // (detected by the '@@' prefix in the caller) and explicit AzureAD
+            // domain credentials are exempt from LogonUser validation.
             IntPtr tokenHandle = IntPtr.Zero;
             IntPtr passwordPtr = IntPtr.Zero;
             bool returnValue = false;
