@@ -156,7 +156,7 @@ namespace SinclairCC.MakeMeAdmin
         */
 
 
-        internal static System.Net.NetworkCredential GetCredentials(IntPtr parentWindow, string userName = null, int errorCode = 0)
+        internal static System.Net.NetworkCredential GetCredentials(IntPtr parentWindow, string userName = null, int errorCode = 0, int flags = 0x200)
         {
             CREDUI_INFO credui = new CREDUI_INFO();
             credui.hwndParent = parentWindow;
@@ -179,7 +179,8 @@ namespace SinclairCC.MakeMeAdmin
                                                            out outCredBuffer,
                                                            out outCredSize,
                                                            ref save,
-                                                           0x200);  // CREDUIWIN_ENUMERATE_CURRENT_USER
+                                                           0x200);  // default: CREDUIWIN_ENUMERATE_CURRENT_USER
+                                                            flags);
 
             if (inCredBuffer != IntPtr.Zero)
             {

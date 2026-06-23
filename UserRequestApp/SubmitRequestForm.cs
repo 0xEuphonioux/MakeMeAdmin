@@ -239,7 +239,13 @@ namespace SinclairCC.MakeMeAdmin
                                 // we're forcing password auth which needs the username hint.
                                 bool skipPreFill = isCloudAuth && Settings.AllowWindowsHelloAuthentication;
                                 string credentialUsernameHint = skipPreFill ? null : currentIdentity.Name;
-                                credentials = NativeMethods.GetCredentials(this.Handle, credentialUsernameHint, authenticationReturnCode);
+
+                                // When CloudAP is active and Hello is enabled, also strip the
+                                // CREDUIWIN_ENUMERATE_CURRENT_USER flag (0x200). Without it,
+                                // the credential provider cannot identify the signed-in user
+                                // from the dialog context alone — preventing session reuse.
+                                int credUIFlags = skipPreFill ? 0 : 0x200;
+                                credentials = NativeMethods.GetCredentials(this.Handle, credentialUsernameHint, authenticationReturnCode, credUIFlags);
 
                                 if (null != credentials)
                                 {
