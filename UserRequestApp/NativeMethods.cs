@@ -179,8 +179,7 @@ namespace SinclairCC.MakeMeAdmin
                                                            out outCredBuffer,
                                                            out outCredSize,
                                                            ref save,
-                                                           0x200);  // default: CREDUIWIN_ENUMERATE_CURRENT_USER
-                                                            flags);
+                                                           flags);  // caller controls: 0x200 for normal, 0 for CloudAP (no current-user hint)
 
             if (inCredBuffer != IntPtr.Zero)
             {
