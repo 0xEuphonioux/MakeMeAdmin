@@ -1,5 +1,5 @@
 ﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
-	<Package Name="!(loc.SoftwareName)" Language="!(loc.LANG)" Version="2.5.8" Manufacturer="!(loc.SoftwareManufacturer)" UpgradeCode="9c690479-3987-48a8-8bda-118ef1f93cdd" InstallerVersion="400" Scope="perMachine">
+	<Package Name="!(loc.SoftwareName)" Language="!(loc.LANG)" Version="2.5.9" Manufacturer="!(loc.SoftwareManufacturer)" UpgradeCode="9c690479-3987-48a8-8bda-118ef1f93cdd" InstallerVersion="400" Scope="perMachine">
 		<Launch Condition="Privileged" Message="!(loc.AdminRightsRequired)" />
 		<MajorUpgrade DowngradeErrorMessage="!(loc.NewerVersionInstalled)" />
 		<MediaTemplate EmbedCab="yes" />

@@ -197,130 +197,66 @@ namespace SinclairCC.MakeMeAdmin
                     WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent();
                     try
                     {
-                        // Normalize the current user's identity for username matching.
-                        // On Entra ID / hybrid-joined devices, WindowsIdentity.GetCurrent().Name
-                        // returns "AzureAD\user@domain.com", but CredUnPackAuthenticationBuffer
-                        // returns just "user@domain.com" (no domain prefix). Also handle the
-                        // on-prem format "DOMAIN\user" → "user".
                         string currentUserName = currentIdentity.Name;
-                        int backslashIdx = currentUserName.IndexOf('\\');
-                        if (backslashIdx >= 0)
-                        {
-                            currentUserName = currentUserName.Substring(backslashIdx + 1);
-                        }
-
-                        // When authentication type is CloudAP (Entra ID / Windows Hello),
-                        // CredUnPackAuthenticationBuffer may return a base64-encoded
-                        // security token instead of a username (e.g., '@@EuAAAA...').
-                        // The credential provider has already validated the user's
-                        // identity through the cloud authentication protocol and the
-                        // dialog was pre-filled with the current user's name.
-                        // Only skip the username comparison when the unpacked value
-                        // is clearly a token (starts with '@@'), not a real username.
-                        bool isCloudAuth = string.Equals(
-                            currentIdentity.AuthenticationType, "CloudAP",
-                            StringComparison.OrdinalIgnoreCase);
 
                         do
                         {
                             bool nameMatch = false;
-                            bool isCloudAPToken = false;
                             do
                             {
-                                // When Windows Hello is enabled on a CloudAP device, do NOT
-                                // pre-fill the username in the credential dialog.
-                                // Passing a pre-filled identity buffer to CredUIPromptForWindowsCredentials
-                                // causes the CloudAP provider to auto-authenticate using the existing
-                                // Windows Hello session — skipping PIN validation entirely.
-                                // With a null hint, the provider must explicitly validate
-                                // whatever credential the user provides (PIN, fingerprint, password).
-                                //
-                                // When Hello is disabled by policy, pre-fill normally —
-                                // we're forcing password auth which needs the username hint.
-                                bool skipPreFill = isCloudAuth && Settings.AllowWindowsHelloAuthentication;
-                                string credentialUsernameHint = skipPreFill ? null : currentIdentity.Name;
-
-                                // When CloudAP is active and Hello is enabled, also strip the
-                                // CREDUIWIN_ENUMERATE_CURRENT_USER flag (0x200). Without it,
-                                // the credential provider cannot identify the signed-in user
-                                // from the dialog context alone — preventing session reuse.
-                                int credUIFlags = skipPreFill ? 0 : 0x200;
-                                credentials = NativeMethods.GetCredentials(this.Handle, credentialUsernameHint, authenticationReturnCode, credUIFlags);
+                                // Pre-fill the current user's identity so the
+                                // credential provider validates against the
+                                // signed-in user.
+                                credentials = NativeMethods.GetCredentials(
+                                    this.Handle, currentIdentity.Name,
+                                    authenticationReturnCode);
 
                                 if (null != credentials)
                                 {
-                                    // For CloudAP auth, CredUnPackAuthenticationBuffer may
-                                    // return a base64 token (starts with '@@') instead of a
-                                    // username. The credential provider already verified this
-                                    // user's identity — skip comparison only for token creds.
-                                    // When Windows Hello is disabled by policy, reject the
-                                    // token so the user must authenticate with a password.
-                                    if (isCloudAuth && !string.IsNullOrEmpty(credentials.UserName) &&
-                                        credentials.UserName.StartsWith("@@", StringComparison.Ordinal) &&
-                                        Settings.AllowWindowsHelloAuthentication)
+                                    // Windows Hello / CloudAP authentication
+                                    // returns a security token (starting with
+                                    // '@@') instead of a username. Reject these
+                                    // outright — Windows Hello auto-authenticates
+                                    // without validating the credentials typed
+                                    // by the user.
+                                    if (!string.IsNullOrEmpty(credentials.UserName) &&
+                                        credentials.UserName.StartsWith("@@",
+                                            StringComparison.Ordinal))
                                     {
-                                        nameMatch = true; // Token credential: provider verified identity
-                                        isCloudAPToken = true;
+                                        MessageBox.Show(this,
+                                            "Windows Hello (PIN, fingerprint, or facial recognition) is not supported for administrator elevation.\n\nPlease use your password instead.",
+                                            Properties.Resources.ApplicationName,
+                                            MessageBoxButtons.OK,
+                                            MessageBoxIcon.Warning,
+                                            MessageBoxDefaultButton.Button1);
+                                        authenticationReturnCode = 0x0000052E;
+                                        credentials = null;
+                                        // credentials is null → exits both loops
+                                        // → auth fails; user must click
+                                        // "Make Me Admin" again with password.
+                                        break;
                                     }
-                                    else if (isCloudAuth)
-                                    {
-                                        // For CloudAP password/UPN auth, the unpacked username
-                                        // may have a different format than currentIdentity.Name
-                                        // (e.g., 'AD3\klucano@ucdavis.edu' vs 'klucano').
-                                        // Strip the domain prefix and compare both the base
-                                        // name and UPN prefix against the normalized identity.
-                                        string credUser = credentials.UserName;
-                                        int credSlash = credUser.IndexOf('\\');
-                                        if (credSlash >= 0)
-                                            credUser = credUser.Substring(credSlash + 1);
-                                        
-                                        nameMatch = string.Equals(credUser, currentUserName,
-                                            StringComparison.OrdinalIgnoreCase);
-                                        
-                                        // Also check if the credential username is our normalized
-                                        // name with a UPN suffix (e.g., 'klucano@ucdavis.edu').
-                                        if (!nameMatch)
-                                        {
-                                            int atIdx = credUser.IndexOf('@');
-                                            if (atIdx > 0)
-                                            {
-                                                string credBase = credUser.Substring(0, atIdx);
-                                                nameMatch = string.Equals(credBase, currentUserName,
-                                                    StringComparison.OrdinalIgnoreCase);
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        nameMatch = (string.Compare(credentials.UserName, currentUserName, true) == 0);
-                                    }
+
+                                    nameMatch = (string.Compare(
+                                        credentials.UserName, currentUserName,
+                                        ignoreCase: true) == 0);
                                 }
                             } while ((null != credentials) && (!nameMatch));
 
                             if (null != credentials)
                             {
-                                // CloudAP tokens (@@ prefix) come from Windows Hello /
-                                // biometric authentication — the credential provider
-                                // has already cryptographically verified the user's
-                                // identity. LogonUser is not applicable for token-based
-                                // auth and would fail with NTLM errors.
-                                if (isCloudAPToken)
-                                {
-                                    authenticationReturnCode = 0;
-                                }
-                                else
-                                {
-                                    authenticationReturnCode = NativeMethods.ValidateCredentials(credentials);
-                                }
+                                authenticationReturnCode =
+                                    NativeMethods.ValidateCredentials(credentials);
                             }
 
-                            // Rate-limit authentication retry attempts to prevent
-                            // denial-of-service via rapid credential entry.
-                            if ((null != credentials) && (authenticationReturnCode != 0))
+                            // Rate-limit retries to prevent brute-force.
+                            if ((null != credentials) &&
+                                (authenticationReturnCode != 0))
                             {
                                 Thread.Sleep(1000);
                             }
-                        } while ((null != credentials) && (authenticationReturnCode != 0));
+                        } while ((null != credentials) &&
+                                 (authenticationReturnCode != 0));
                     }
                     catch (ArgumentException excep)
                     {

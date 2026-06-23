@@ -193,3 +193,4 @@ ModelManifest.xml
 
 # Ignore the Installers folder at the root
 /Installers/
+release_assets/

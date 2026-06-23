@@ -156,7 +156,7 @@ namespace SinclairCC.MakeMeAdmin
         */
 
 
-        internal static System.Net.NetworkCredential GetCredentials(IntPtr parentWindow, string userName = null, int errorCode = 0, int flags = 0x200)
+        internal static System.Net.NetworkCredential GetCredentials(IntPtr parentWindow, string userName = null, int errorCode = 0)
         {
             CREDUI_INFO credui = new CREDUI_INFO();
             credui.hwndParent = parentWindow;
@@ -171,6 +171,7 @@ namespace SinclairCC.MakeMeAdmin
 
             GetInputBuffer(userName, out var inCredBuffer, out var inCredSize);
 
+            const int flags = 0x200; // CREDUIWIN_ENUMERATE_CURRENT_USER
             int result = CredUIPromptForWindowsCredentials(ref credui,
                                                            errorCode,
                                                            ref authPackage,
@@ -179,7 +180,7 @@ namespace SinclairCC.MakeMeAdmin
                                                            out outCredBuffer,
                                                            out outCredSize,
                                                            ref save,
-                                                           flags);  // caller controls: 0x200 for normal, 0 for CloudAP (no current-user hint)
+                                                           flags);
 
             if (inCredBuffer != IntPtr.Zero)
             {
@@ -261,18 +262,12 @@ namespace SinclairCC.MakeMeAdmin
             // does not support). The credential dialog (CredUIPromptForWindowsCredentials)
             // already validated these credentials through the AzureAD credential
             // provider, so we can skip the redundant LogonUser check.
+            // NOTE: Windows Hello / CloudAP tokens (user names starting with '@@')
+            // are rejected by the caller before reaching ValidateCredentials.
             if (string.Equals(domain, "AzureAD", StringComparison.OrdinalIgnoreCase))
             {
                 return 0;
             }
-
-            // Execute LogonUser to validate the password against the DC or
-            // local SAM. We do NOT blanket-bypass validation on Entra ID-joined
-            // devices, because CloudAP/Windows Hello may auto-authenticate via
-            // cached PRT/biometrics regardless of what was typed in the dialog,
-            // effectively bypassing the password check. Only CloudAP tokens
-            // (detected by the '@@' prefix in the caller) and explicit AzureAD
-            // domain credentials are exempt from LogonUser validation.
             IntPtr tokenHandle = IntPtr.Zero;
             IntPtr passwordPtr = IntPtr.Zero;
             bool returnValue = false;
