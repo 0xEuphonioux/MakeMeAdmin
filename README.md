@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.4.x64.msi">
-    <img src="https://img.shields.io/badge/⬇️_Download_Installer-v2.5.4-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Installer">
+  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.5.x64.msi">
+    <img src="https://img.shields.io/badge/⬇️_Download_Installer-v2.5.5-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Installer">
   </a>
 </p>
 
@@ -36,7 +36,7 @@ Make Me Admin lets **standard users** temporarily elevate to administrator — w
 
 ## Quick Install
 
-1. **[Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.4.x64.msi)**
+1. **[Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.5.x64.msi)**
 2. Run it **as Administrator**
 3. That's it — the service starts automatically
 
