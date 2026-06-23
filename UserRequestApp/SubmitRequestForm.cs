@@ -240,6 +240,29 @@ namespace SinclairCC.MakeMeAdmin
                                     nameMatch = (string.Compare(
                                         credentials.UserName, currentUserName,
                                         ignoreCase: true) == 0);
+
+                                    // Normalize for Entra ID / hybrid-joined
+                                    // devices, where WindowsIdentity.Name
+                                    // returns "AzureAD\user@domain.com" but
+                                    // the credential dialog returns just
+                                    // "user@domain.com". Strip any domain
+                                    // prefix from both sides before comparing.
+                                    if (!nameMatch)
+                                    {
+                                        string credUser = credentials.UserName;
+                                        int cs = credUser.IndexOf('\\');
+                                        if (cs >= 0)
+                                            credUser = credUser.Substring(cs + 1);
+
+                                        string currUser = currentUserName;
+                                        int us = currUser.IndexOf('\\');
+                                        if (us >= 0)
+                                            currUser = currUser.Substring(us + 1);
+
+                                        nameMatch = string.Equals(
+                                            credUser, currUser,
+                                            StringComparison.OrdinalIgnoreCase);
+                                    }
                                 }
                             } while ((null != credentials) && (!nameMatch));
 
