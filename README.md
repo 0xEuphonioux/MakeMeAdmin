@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.11.x64.msi">
-    <img src="https://img.shields.io/badge/⬇️_Download_Installer-v2.5.11-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Installer">
+  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.6.0.x64.msi">
+    <img src="https://img.shields.io/badge/⬇️_Download_Installer-v2.6.0-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Installer">
   </a>
 </p>
 
@@ -25,7 +25,7 @@
 Make Me Admin lets **standard users** temporarily elevate to administrator — without IT intervention. Think `sudo` for Windows.
 
 - 🕐 **Auto-expires** — rights are removed after a configurable timeout
-- 🔐 **Authenticated** — requires Windows password (Windows Hello not supported)
+- 🔐 **Authenticated** — Windows Hello (PIN, fingerprint, face) or password
 - 📋 **Reason tracking** — optional/required justification with canned reasons
 - 📡 **SIEM-ready** — forwards all events to syslog (Splunk, Sentinel, etc.)
 - ☁️ **Entra ID / hybrid-join** — works with on-prem AD, Azure AD, and hybrid deployments
@@ -36,7 +36,7 @@ Make Me Admin lets **standard users** temporarily elevate to administrator — w
 
 ## Quick Install
 
-1. **[Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.11.x64.msi)**
+1. **[Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.6.0.x64.msi)**
 2. Run it **as Administrator**
 3. That's it — the service starts automatically
 

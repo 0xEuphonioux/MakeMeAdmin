@@ -150,13 +150,25 @@ namespace SinclairCC.MakeMeAdmin
         /// <param name="e">
         /// Data specific to this event.
         /// </param>
-        private void ClickSubmitButton(object sender, EventArgs e)
+        private bool _authInProgress = false;
+
+        private async void ClickSubmitButton(object sender, EventArgs e)
         {
-            if (AuthenticationSuccessful && ReasonDialogSatisfied)
+            if (_authInProgress) return;
+            _authInProgress = true;
+            try
             {
-                this.DisableButtons();
-                this.appStatus.Text = string.Format(Properties.Resources.UIMessageAddingToGroup, LocalAdministratorGroup.LocalAdminGroupName);
-                addUserBackgroundWorker.RunWorkerAsync();
+                bool authenticated = await CheckAuthenticationAsync();
+                if (authenticated && ReasonDialogSatisfied)
+                {
+                    this.DisableButtons();
+                    this.appStatus.Text = string.Format(Properties.Resources.UIMessageAddingToGroup, LocalAdministratorGroup.LocalAdminGroupName);
+                    addUserBackgroundWorker.RunWorkerAsync();
+                }
+            }
+            finally
+            {
+                _authInProgress = false;
             }
         }
 
@@ -183,133 +195,164 @@ namespace SinclairCC.MakeMeAdmin
             return credentials.UserName;
         }
 
-        private bool AuthenticationSuccessful
+        /// <summary>
+        /// Checks authentication using Windows Hello when available,
+        /// falling back to password-based authentication otherwise.
+        /// </summary>
+        /// <returns>true if the user's identity was verified.</returns>
+        private async System.Threading.Tasks.Task<bool> CheckAuthenticationAsync()
         {
-            get
+            if (!Settings.RequireAuthenticationForPrivileges)
+                return true;
+
+            // 1. Try Windows Hello first (if available and not disabled)
+            if (Settings.AllowWindowsHelloAuthentication)
             {
-                bool authenticationSuccessful = true;
-                if (Settings.RequireAuthenticationForPrivileges)
+                try
                 {
-                    authenticationSuccessful = false;
+                    bool helloAvailable = await HelloVerificationHelper.IsAvailableAsync();
 
-                    System.Net.NetworkCredential credentials = null;
-                    int authenticationReturnCode = 0;
-                    WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent();
-                    try
+                    if (helloAvailable)
                     {
-                        string currentUserName = currentIdentity.Name;
+                        var helloResult = await HelloVerificationHelper.VerifyAsync(
+                            "Verify your identity to request administrator privileges");
 
-                        do
-                        {
-                            bool nameMatch = false;
-                            do
-                            {
-                                // Pre-fill the current user's identity so the
-                                // credential provider validates against the
-                                // signed-in user.
-                                credentials = NativeMethods.GetCredentials(
-                                    this.Handle, currentIdentity.Name,
-                                    authenticationReturnCode);
+                        if (helloResult == Windows.Security.Credentials.UI.UserConsentVerificationResult.Verified)
+                            return true;
 
-                                if (null != credentials)
-                                {
-                                    // Windows Hello / CloudAP authentication
-                                    // returns a security token (starting with
-                                    // '@@') instead of a username. Reject these
-                                    // outright — Windows Hello auto-authenticates
-                                    // without validating the credentials typed
-                                    // by the user.
-                                    if (!string.IsNullOrEmpty(credentials.UserName) &&
-                                        credentials.UserName.StartsWith("@@",
-                                            StringComparison.Ordinal))
-                                    {
-                                        MessageBox.Show(this,
-                                            "Windows Hello (PIN, fingerprint, or facial recognition) is not supported for administrator elevation.\n\nPlease use your password instead.",
-                                            Properties.Resources.ApplicationName,
-                                            MessageBoxButtons.OK,
-                                            MessageBoxIcon.Warning,
-                                            MessageBoxDefaultButton.Button1);
-                                        authenticationReturnCode = 0x0000052E;
-                                        credentials = null;
-                                        // credentials is null → exits both loops
-                                        // → auth fails; user must click
-                                        // "Make Me Admin" again with password.
-                                        break;
-                                    }
+                        if (helloResult == Windows.Security.Credentials.UI.UserConsentVerificationResult.Canceled)
+                            return false;
 
-                                    nameMatch = (string.Compare(
-                                        credentials.UserName, currentUserName,
-                                        ignoreCase: true) == 0);
-
-                                    // Normalize for Entra ID / hybrid-joined
-                                    // devices, where WindowsIdentity.Name
-                                    // returns "AzureAD\user@domain.com" but
-                                    // the credential dialog returns just
-                                    // "user@domain.com". Strip any domain
-                                    // prefix from both sides before comparing.
-                                    if (!nameMatch)
-                                    {
-                                        string credUser = credentials.UserName;
-                                        int cs = credUser.IndexOf('\\');
-                                        if (cs >= 0)
-                                            credUser = credUser.Substring(cs + 1);
-
-                                        // On hybrid-joined devices, the
-                                        // credential dialog may return
-                                        // 'DOMAIN\username@upn' while
-                                        // WindowsIdentity.GetCurrent().Name
-                                        // returns 'DOMAIN\username'. Strip
-                                        // the @upn suffix from the credential
-                                        // so the bare username can match.
-                                        int atIndex = credUser.IndexOf('@');
-                                        if (atIndex >= 0)
-                                            credUser = credUser.Substring(0, atIndex);
-
-                                        string currUser = currentUserName;
-                                        int us = currUser.IndexOf('\\');
-                                        if (us >= 0)
-                                            currUser = currUser.Substring(us + 1);
-
-                                        nameMatch = string.Equals(
-                                            credUser, currUser,
-                                            StringComparison.OrdinalIgnoreCase);
-                                    }
-                                }
-                            } while ((null != credentials) && (!nameMatch));
-
-                            if (null != credentials)
-                            {
-                                authenticationReturnCode =
-                                    NativeMethods.ValidateCredentials(credentials);
-                            }
-
-                            // Rate-limit retries to prevent brute-force.
-                            if ((null != credentials) &&
-                                (authenticationReturnCode != 0))
-                            {
-                                Thread.Sleep(1000);
-                            }
-                        } while ((null != credentials) &&
-                                 (authenticationReturnCode != 0));
+                        // If Hello failed for another reason (wrong PIN, busy, etc.),
+                        // show a message and fall through to password auth.
+                        MessageBox.Show(this,
+                            HelloVerificationHelper.GetResultDescription(helloResult) +
+                            "\n\nYou can use your password instead.",
+                            Properties.Resources.ApplicationName,
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information,
+                            MessageBoxDefaultButton.Button1);
                     }
-                    catch (ArgumentException excep)
-                    {
-                        MessageBox.Show(this, string.Format("{0}: {1}", excep.GetType().Name, excep.Message), Properties.Resources.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, 0);
-                    }
-                    catch (System.ComponentModel.Win32Exception excep)
-                    {
-                        MessageBox.Show(this, string.Format("{0}: {1}", excep.GetType().Name, excep.Message), Properties.Resources.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, 0);
-                    }
-                    catch (Exception excep)
-                    {
-                        MessageBox.Show(this, string.Format("{0}: {1}", excep.GetType().Name, excep.Message), Properties.Resources.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, 0);
-                    }
-
-                    authenticationSuccessful = (null != credentials);
-                    authenticationSuccessful &= (authenticationReturnCode == 0);
                 }
-                return authenticationSuccessful;
+                catch (Exception)
+                {
+                    // If Hello throws (e.g., WinRT not available on older Windows),
+                    // silently fall through to password auth.
+                }
             }
+
+            // 2. Password-based fallback — identical to the v2.5.11
+            //    authentication flow. Uses CREDUIWIN_ENUMERATE_CURRENT_USER
+            //    (0x200) + full current-identity pre-fill so the Entra ID
+            //    credential provider returns the UPN, not the SAM name.
+            System.Net.NetworkCredential credentials = null;
+            int authenticationReturnCode = 0;
+            WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent();
+            try
+            {
+                string currentUserName = currentIdentity.Name;
+
+                do
+                {
+                    bool nameMatch = false;
+                    do
+                    {
+                        // Pre-fill the current user's identity so the
+                        // credential provider validates against the
+                        // signed-in user.
+                        credentials = NativeMethods.GetCredentials(
+                            this.Handle, currentIdentity.Name,
+                            authenticationReturnCode);
+
+                        if (null != credentials)
+                        {
+                            // Windows Hello / CloudAP authentication
+                            // returns a security token (starting with
+                            // '@@') instead of a username. Reject these
+                            // outright — Windows Hello auto-authenticates
+                            // without validating the credentials typed
+                            // by the user. Empty usernames are also
+                            // a fingerprint of silent CloudAP auth.
+                            if (string.IsNullOrEmpty(credentials.UserName) ||
+                                credentials.UserName.StartsWith("@@",
+                                    StringComparison.Ordinal))
+                            {
+                                MessageBox.Show(this,
+                                    "Windows Hello (PIN, fingerprint, or facial recognition) is not supported for administrator elevation.\n\nPlease use your password instead.",
+                                    Properties.Resources.ApplicationName,
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Warning,
+                                    MessageBoxDefaultButton.Button1);
+                                authenticationReturnCode = 0x0000052E;
+                                credentials = null;
+                                break;
+                            }
+
+                            nameMatch = (string.Compare(
+                                credentials.UserName, currentUserName,
+                                ignoreCase: true) == 0);
+
+                            // Normalize for Entra ID / hybrid-joined
+                            // devices, where WindowsIdentity.Name
+                            // returns "DOMAIN\username" but the
+                            // credential dialog may return
+                            // "DOMAIN\username@upn" or
+                            // "AzureAD\user@domain.com".
+                            // Strip the domain prefix from both sides,
+                            // and strip any @upn suffix from the
+                            // credential, before comparing.
+                            if (!nameMatch)
+                            {
+                                string credUser = credentials.UserName;
+                                int cs = credUser.IndexOf('\\');
+                                if (cs >= 0)
+                                    credUser = credUser.Substring(cs + 1);
+
+                                int atIndex = credUser.IndexOf('@');
+                                if (atIndex >= 0)
+                                    credUser = credUser.Substring(0, atIndex);
+
+                                string currUser = currentUserName;
+                                int us = currUser.IndexOf('\\');
+                                if (us >= 0)
+                                    currUser = currUser.Substring(us + 1);
+
+                                nameMatch = string.Equals(
+                                    credUser, currUser,
+                                    StringComparison.OrdinalIgnoreCase);
+                            }
+                        }
+                    } while ((null != credentials) && (!nameMatch));
+
+                    if (null != credentials)
+                    {
+                        authenticationReturnCode =
+                            NativeMethods.ValidateCredentials(credentials);
+                    }
+
+                    // Rate-limit retries to prevent brute-force.
+                    if ((null != credentials) &&
+                        (authenticationReturnCode != 0))
+                    {
+                        Thread.Sleep(1000);
+                    }
+                } while ((null != credentials) &&
+                         (authenticationReturnCode != 0));
+            }
+            catch (ArgumentException excep)
+            {
+                MessageBox.Show(this, string.Format("{0}: {1}", excep.GetType().Name, excep.Message), Properties.Resources.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, 0);
+            }
+            catch (System.ComponentModel.Win32Exception excep)
+            {
+                MessageBox.Show(this, string.Format("{0}: {1}", excep.GetType().Name, excep.Message), Properties.Resources.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, 0);
+            }
+            catch (Exception excep)
+            {
+                MessageBox.Show(this, string.Format("{0}: {1}", excep.GetType().Name, excep.Message), Properties.Resources.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, 0);
+            }
+
+            return (null != credentials) && (authenticationReturnCode == 0);
         }
 
 
