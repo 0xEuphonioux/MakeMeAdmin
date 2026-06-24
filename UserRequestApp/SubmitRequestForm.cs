@@ -254,6 +254,17 @@ namespace SinclairCC.MakeMeAdmin
                                         if (cs >= 0)
                                             credUser = credUser.Substring(cs + 1);
 
+                                        // On hybrid-joined devices, the
+                                        // credential dialog may return
+                                        // 'DOMAIN\username@upn' while
+                                        // WindowsIdentity.GetCurrent().Name
+                                        // returns 'DOMAIN\username'. Strip
+                                        // the @upn suffix from the credential
+                                        // so the bare username can match.
+                                        int atIndex = credUser.IndexOf('@');
+                                        if (atIndex >= 0)
+                                            credUser = credUser.Substring(0, atIndex);
+
                                         string currUser = currentUserName;
                                         int us = currUser.IndexOf('\\');
                                         if (us >= 0)
