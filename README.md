@@ -70,6 +70,7 @@ HKLM\SOFTWARE\Sinclair Community College\Make Me Admin\           (Local)
 | `Allow Free Text Reason` | DWORD | 1 (Yes) | Allow custom reason text |
 | `Canned Reasons` | MULTI_SZ | — | Predefined reason dropdown options |
 | `Require Authentication For Privileges` | DWORD | 1 (Yes) | Require password/biometric |
+| `Allow Windows Hello Authentication` | DWORD | 1 (Yes) | Enable PIN/fingerprint/face verification |
 | `Remove Admin Rights On Logout` | DWORD | 1 (Yes) | Auto-revoke on sign-out |
 | `Log Elevated Processes` | DWORD | 0 (No) | Log when admin processes launch |
 | `Syslog Servers` | — | — | Configure syslog forwarding |
@@ -80,21 +81,41 @@ See the [upstream wiki](https://github.com/pseymour/MakeMeAdmin/wiki) for full d
 
 ## Version History
 
-### v2.5.4 (latest)
+### v2.6.0
+- 🔐 **Windows Hello support** — PIN, fingerprint, or facial recognition via `UserConsentVerifier` API (TPM-backed, same mechanism UAC uses)
+- 🛡️ `@@` CloudAP token rejection — prevents cached-session bypass in password path
+- 🐛 **Fixed**: UPN auth loop on hybrid-joined devices — credential dialog returned `DOMAIN\username@upn` but identity was `DOMAIN\username`
+- 🐛 **Fixed**: empty username from silent CloudAP auto-auth now properly rejected
+
+### v2.5.11
+- 🐛 **Fixed**: UPN suffix mismatch on hybrid-joined devices (backport of v2.6.0 fix)
+
+### v2.5.10
+- 🐛 **Fixed**: Entra ID UPN re-prompt loop — normalized domain prefix in name comparison
+
+### v2.5.9
+- ⏪ Reverted to v2.5.4 auth logic + hard block on Windows Hello (`@@` token check)
+
+### v2.5.8
+- 🐛 **Fixed**: credential dialog re-prompt on password mismatch (returned `@@` tokens)
+
+### v2.5.6
+- 🔐 Windows Hello detection — identifies and rejects CloudAP `@@` credential tokens
+
+### v2.5.4
 - 🔐 **CRITICAL**: Fixed auth bypass on Entra ID-joined devices (wrong passwords could grant admin)
 - 🛡️ Credential blob sanitization — CloudAP tokens never leak to logs
 - 🛠️ Cancel on reason prompt now properly cancels admin request
 - 📦 MSI `DisplayVersion` fixed (was stuck at 2.5.0)
 
 ### v2.5.0
-- Entra ID / hybrid-join detection (`NetGetAadJoinInformation`)
-- CloudAP token handling for Windows Hello / biometric auth
-- UPN normalization — works with any Entra ID tenant
-- Syslog forwarding for elevated process events
-- GitHub Actions CI/CD for MSI builds
+- ☁️ Entra ID / hybrid-join detection (`NetGetAadJoinInformation`)
+- 🔄 UPN normalization — works with any Entra ID tenant
+- 📡 Syslog forwarding for elevated process events
+- ⚙️ GitHub Actions CI/CD for MSI builds
 
 ### v2.4.2
-- Syslog forwarding infrastructure
+- 📡 Syslog forwarding infrastructure
 
 ---
 
