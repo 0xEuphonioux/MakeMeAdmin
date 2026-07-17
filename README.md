@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.6.0.x64.msi">
-    <img src="https://img.shields.io/badge/⬇️_Download_Installer-v2.6.0-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Installer">
+  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.6.1.x64.msi">
+    <img src="https://img.shields.io/badge/⬇️_Download_Installer-v2.6.1-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Installer">
   </a>
 </p>
 
@@ -36,7 +36,7 @@ Make Me Admin lets **standard users** temporarily elevate to administrator — w
 
 ## Quick Install
 
-1. **[Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.6.0.x64.msi)**
+1. **[Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.6.1.x64.msi)**
 2. Run it **as Administrator**
 3. That's it — the service starts automatically
 
@@ -80,6 +80,14 @@ See the [upstream wiki](https://github.com/pseymour/MakeMeAdmin/wiki) for full d
 ---
 
 ## Version History
+
+### v2.6.1 — Security Hardening
+- 🛡️ **Default-deny policy** — remote administration now denies by default; explicit allow-list required
+- 🔐 **Authentication required by default** — `RequireAuthentication` defaults to `true`
+- 🔒 **DPAPI hardening** — encrypted settings use `CurrentUser` scope + entropy salt (was `LocalMachine`)
+- 📡 **WCF transport upgrade** — `TransportWithMessageCredential` binding replaces plain TCP
+- 🧹 **BinaryFormatter removed** — eliminated unsafe deserialization surface
+- 🔏 **User data ACL** — restrictive DACL applied to `users.xml` (Authenticated Users read, Admins full control)
 
 ### v2.6.0
 - 🔐 **Windows Hello support** — PIN, fingerprint, or facial recognition via `UserConsentVerifier` API (TPM-backed, same mechanism UAC uses)
