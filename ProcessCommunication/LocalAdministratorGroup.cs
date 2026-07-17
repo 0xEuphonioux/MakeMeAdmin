@@ -197,22 +197,19 @@ namespace SinclairCC.MakeMeAdmin
                 (userIsAuthorized)
                )
             {
-#if DEBUG
-                if (expirationTime.HasValue)
-                {
-                    ApplicationLog.WriteEvent(string.Format("Adding user with expiration time of {0}.", expirationTime), EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
-                }
-                else
-                {
-                    ApplicationLog.WriteEvent("Adding user with null expiration time.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
-                }
-#endif
-
                 // Save the user's information to the list of users.
                 EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
                 encryptedSettings.AddUser(userIdentity, expirationTime, remoteAddress);
 
                 AddUserToAdministrators(userIdentity.User, reason);
+            }
+            else
+            {
+                string accountName = (userIdentity?.User != null) ? GetAccountNameFromSID(userIdentity.User) : "unknown";
+                string reasonNote = string.IsNullOrEmpty(reason) ? "" : string.Format(" (reason: \"{0}\")", reason);
+                ApplicationLog.WriteEvent(
+                    string.Format("Authorization denied for user {0}{1}. Check allowed/denied entity lists.", accountName, reasonNote),
+                    EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Warning);
             }
         }
 

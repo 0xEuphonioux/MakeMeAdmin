@@ -224,17 +224,13 @@ namespace SinclairCC.MakeMeAdmin
 
             if (userIdentity == null)
             {
-#if DEBUG
-                ApplicationLog.WriteEvent("User identity is null.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
-#endif
+                ApplicationLog.WriteEvent("User identity is null. Authorization denied.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Warning);
                 return false;
             }
 
             if (((deniedSidsList != null) && (deniedSidsList.Length > 0)) && AccountListContainsIdentity(deniedSidsList, userIdentity))
             { // The denied list contains entries. Check the user against that list first.
-#if DEBUG
-                ApplicationLog.WriteEvent("User is denied.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
-#endif
+                ApplicationLog.WriteEvent("User is on the denied entities list. Authorization denied.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
                 return false;
             }
 
@@ -243,19 +239,12 @@ namespace SinclairCC.MakeMeAdmin
             // Check the authorization list.
             if (allowedSidsList == null)
             { // The allowed list is null. Require explicit configuration — do NOT default to allow-all.
-#if DEBUG
-                ApplicationLog.WriteEvent("Allowed SIDs list is null. Denying — explicit configuration required.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Warning);
-#endif
+                ApplicationLog.WriteEvent("Allowed entities list is null. Authorization denied — explicit configuration required.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Warning);
                 return false;
             }
             else if (allowedSidsList.Length == 0)
             { // The allowed list is empty, meaning no one is allowed administrator rights.
-                /*
-#if DEBUG
-                ApplicationLog.WriteEvent("Allowed SIDs list is empty.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
-#endif
-                */
-
+                ApplicationLog.WriteEvent("Allowed entities list is empty. Authorization denied.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
                 return false;
             }
             else
