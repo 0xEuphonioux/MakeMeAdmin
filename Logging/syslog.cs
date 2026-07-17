@@ -168,7 +168,7 @@ namespace SinclairCC.MakeMeAdmin
                 }
                 else
                 {
-                    throw new TimeoutException(string.Format("TCP syslog host {0}:{1} is not reachable.", hostname, port));
+                    throw new System.TimeoutException(string.Format("TCP syslog host {0}:{1} is not reachable.", hostname, port));
                 }
             }
             else if (string.Compare(protocol, "UDP", true) == 0)
