@@ -5,8 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-https://github.com/pseymour/MakeMeAdmin/commits/master
+https://github.com/0xEuphonioux/MakeMeAdmin/commits/master
 
+## [2.5.0] - 2025-06-22
+
+### Added
+
+- **Windows Hello support** — PIN, fingerprint, or facial recognition via `UserConsentVerifier` API (TPM-backed, same mechanism UAC uses).
+- **Entra ID / hybrid-join detection** — `NetGetAadJoinInformation` for seamless cloud-domain auth.
+- **UPN normalization** — works with any Entra ID tenant, including hybrid-joined devices.
+- **Syslog forwarding** for elevated process events (Splunk, Sentinel, etc.).
+- **Allow Windows Hello Authentication** policy setting (DWORD, default: enabled).
+
+### Changed
+
+- **Default-deny policy** — remote administration now denies by default; explicit allow-list required.
+- **Authentication required by default** — `RequireAuthentication` defaults to `true`.
+- **DPAPI hardening** — encrypted settings use `CurrentUser` scope + entropy salt (was `LocalMachine`).
+- **WCF transport upgrade** — `TransportWithMessageCredential` binding replaces plain TCP.
+- MSI `DisplayVersion` now correctly reflects the installed version.
+
+### Removed
+
+- **BinaryFormatter** — eliminated unsafe deserialization surface.
+
+### Fixed
+
+- **Critical**: Auth bypass on Entra ID-joined devices (wrong passwords could grant admin).
+- UPN suffix mismatch on hybrid-joined devices (credential dialog returned `DOMAIN\username@upn` but identity was `DOMAIN\username`).
+- Credential dialog re-prompt loop on password mismatch (returned `@@` CloudAP tokens).
+- Empty username from silent CloudAP auto-auth now properly rejected.
+- Cancel on reason prompt now properly cancels admin request.
+
+### Security
+
+- **User data ACL hardening** — restrictive DACL applied to `users.xml` (Authenticated Users read, Admins full control).
+- Credential blob sanitization — CloudAP tokens never leak to logs.
+- GitHub Actions CI/CD for automated MSI builds.
 
 ## [2.4.1] - 2025-11-13
 
