@@ -241,7 +241,7 @@ namespace SinclairCC.MakeMeAdmin
                 }
             }
 
-            // 2. Password-based fallback — identical to the v2.5.11
+            // 2. Password-based fallback — identical to the v2.5.0 logic
             //    authentication flow. Uses CREDUIWIN_ENUMERATE_CURRENT_USER
             //    (0x200) + full current-identity pre-fill so the Entra ID
             //    credential provider returns the UPN, not the SAM name.
