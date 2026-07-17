@@ -175,7 +175,10 @@ namespace SinclairCC.MakeMeAdmin
         /// <param name="remoteAddress">
         /// The address of the remote host from which a request for administrator rights came, if applicable.
         /// </param>
-        public static void AddUser(WindowsIdentity userIdentity, DateTime? expirationTime, string remoteAddress)
+        /// <param name="reason">
+        /// The reason the user provided for requesting administrator rights. May be null or empty.
+        /// </param>
+        public static void AddUser(WindowsIdentity userIdentity, DateTime? expirationTime, string remoteAddress, string reason = null)
         {
             // TODO: Only do this if the user is not a member of the group?
 
@@ -209,7 +212,7 @@ namespace SinclairCC.MakeMeAdmin
                 EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
                 encryptedSettings.AddUser(userIdentity, expirationTime, remoteAddress);
 
-                AddUserToAdministrators(userIdentity.User);
+                AddUserToAdministrators(userIdentity.User, reason);
             }
         }
 
@@ -219,12 +222,13 @@ namespace SinclairCC.MakeMeAdmin
         /// <param name="userSid">
         /// The security identifier (SID) to be added to the local Administrators group.
         /// </param>
-        private static bool AddUserToAdministrators(SecurityIdentifier userSid)
+        private static bool AddUserToAdministrators(SecurityIdentifier userSid, string reason = null)
         {
             int result = AddLocalGroupMembers(LocalAdminGroupName, userSid);
             if (result == 0)
             {
-                ApplicationLog.WriteEvent(string.Format(Properties.Resources.UserAddedToAdminsGroup, userSid, GetAccountNameFromSID(userSid)), EventID.UserAddedToAdminsSuccess, System.Diagnostics.EventLogEntryType.Information);
+                string reasonSuffix = string.IsNullOrEmpty(reason) ? "" : string.Format(" Reason: {0}.", reason);
+                ApplicationLog.WriteEvent(string.Format(Properties.Resources.UserAddedToAdminsGroup, userSid, GetAccountNameFromSID(userSid)) + reasonSuffix, EventID.UserAddedToAdminsSuccess, System.Diagnostics.EventLogEntryType.Information);
                 return true;
             }
             else

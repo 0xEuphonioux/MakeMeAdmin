@@ -151,6 +151,7 @@ namespace SinclairCC.MakeMeAdmin
         /// Data specific to this event.
         /// </param>
         private bool _authInProgress = false;
+        private string _grantReason = null; // Reason captured from dialog, passed to WCF for syslog
 
         private async void ClickSubmitButton(object sender, EventArgs e)
         {
@@ -367,6 +368,7 @@ namespace SinclairCC.MakeMeAdmin
                     case ReasonPrompt.None:
                         // No reason dialog box required.
                         dialogSatisfied = true;
+                        _grantReason = null;
                         break;
 
                     case ReasonPrompt.Optional:
@@ -385,12 +387,15 @@ namespace SinclairCC.MakeMeAdmin
                                     case DialogResult.Cancel:
                                         // User chose to cancel the entire operation.
                                         dialogSatisfied = false;
+                                        _grantReason = null;
                                         break;
                                     case DialogResult.OK:
+                                        _grantReason = reasonDialog.Reason;
                                         ApplicationLog.WriteEvent(string.Format(Properties.Resources.ReasonProvidedByUser, reasonDialog.Reason), EventID.ReasonProvidedByUser, System.Diagnostics.EventLogEntryType.Information);
                                         break;
                                     default:
                                         // Not sure how we got to this point, because it should never happen.
+                                        _grantReason = null;
                                         break;
                                 }
                             }
@@ -412,17 +417,20 @@ namespace SinclairCC.MakeMeAdmin
                                 {
                                     case DialogResult.Cancel:
                                         dialogSatisfied = false;
+                                        _grantReason = null;
                                         MessageBox.Show(this, Properties.Resources.MandatoryReasonNotProvided, Properties.Resources.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1);
                                         break;
                                     case DialogResult.OK:
                                         if (string.Compare(reasonDialog.Reason, string.Format("{0}: ", Properties.Resources.OtherReason), true) == 0)
                                         { // User didn't really provide a reason. The string is blank.
                                             dialogSatisfied = false;
+                                            _grantReason = null;
                                             MessageBox.Show(this, Properties.Resources.MandatoryReasonNotProvided, Properties.Resources.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1);
                                         }
                                         else
                                         {
                                             dialogSatisfied = true;
+                                            _grantReason = reasonDialog.Reason;
                                             ApplicationLog.WriteEvent(string.Format(Properties.Resources.ReasonProvidedByUser, reasonDialog.Reason), EventID.ReasonProvidedByUser, System.Diagnostics.EventLogEntryType.Information);
                                         }
                                         break;
@@ -430,6 +438,7 @@ namespace SinclairCC.MakeMeAdmin
                                         // Not sure how we got to this point, because it should never happen.
                                         // Better to be safe than sorry, so no admin rights.
                                         dialogSatisfied = false;
+                                        _grantReason = null;
                                         break;
                                 }
                             }
@@ -470,7 +479,7 @@ namespace SinclairCC.MakeMeAdmin
 
             try
             {
-                channel.AddUserToAdministratorsGroup();
+                channel.AddUserToAdministratorsGroup(_grantReason);
             }
             catch (System.ServiceModel.EndpointNotFoundException)
             {

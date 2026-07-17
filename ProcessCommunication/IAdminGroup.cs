@@ -32,8 +32,12 @@ namespace SinclairCC.MakeMeAdmin
         /// <summary>
         /// Adds a user to the Administrators group.
         /// </summary>
+        /// <param name="reason">
+        /// The reason the user provided for requesting administrator rights.
+        /// May be null or empty if no reason was prompted.
+        /// </param>
         [OperationContract]
-        void AddUserToAdministratorsGroup();
+        void AddUserToAdministratorsGroup(string reason);
 
         /// <summary>
         /// Removes a user from the Administrators group.
