@@ -221,16 +221,31 @@ namespace SinclairCC.MakeMeAdmin
         /// </param>
         private static bool AddUserToAdministrators(SecurityIdentifier userSid, string reason = null)
         {
-            int result = AddLocalGroupMembers(LocalAdminGroupName, userSid);
-            if (result == 0)
+            try
             {
-                string reasonSuffix = string.IsNullOrEmpty(reason) ? "" : string.Format(" Reason: {0}.", reason);
-                ApplicationLog.WriteEvent(string.Format(Properties.Resources.UserAddedToAdminsGroup, userSid, GetAccountNameFromSID(userSid)) + reasonSuffix, EventID.UserAddedToAdminsSuccess, System.Diagnostics.EventLogEntryType.Information);
-                return true;
+                string accountName = GetAccountNameFromSID(userSid);
+                ApplicationLog.WriteEvent(
+                    string.Format("Attempting to add {0} to the {1} group.", accountName, LocalAdminGroupName),
+                    EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
+
+                int result = AddLocalGroupMembers(LocalAdminGroupName, userSid);
+                if (result == 0)
+                {
+                    string reasonSuffix = string.IsNullOrEmpty(reason) ? "" : string.Format(" Reason: {0}.", reason);
+                    ApplicationLog.WriteEvent(string.Format(Properties.Resources.UserAddedToAdminsGroup, userSid, accountName) + reasonSuffix, EventID.UserAddedToAdminsSuccess, System.Diagnostics.EventLogEntryType.Information);
+                    return true;
+                }
+                else
+                {
+                    ApplicationLog.WriteEvent(string.Format(Properties.Resources.AddingUserReturnedError, userSid, accountName, result), EventID.UserAddedToAdminsFailure, System.Diagnostics.EventLogEntryType.Warning);
+                    return false;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ApplicationLog.WriteEvent(string.Format(Properties.Resources.AddingUserReturnedError, userSid, GetAccountNameFromSID(userSid), result), EventID.UserAddedToAdminsFailure, System.Diagnostics.EventLogEntryType.Warning);
+                ApplicationLog.WriteEvent(
+                    string.Format("Exception in AddUserToAdministrators: {0}", ex.Message),
+                    EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Error);
                 return false;
             }
         }
