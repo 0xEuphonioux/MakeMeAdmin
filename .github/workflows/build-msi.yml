@@ -3,6 +3,7 @@ name: Build MSI
 on:
   push:
     branches: [master]
+    tags: ['v*']
   workflow_dispatch:
 
 jobs:
