@@ -129,7 +129,8 @@ namespace SinclairCC.MakeMeAdmin
             string remoteHostAddress = string.Format("net.tcp://{0}:{1}/MakeMeAdmin/Service", hostName, Settings.TCPServicePort);
 
             // Open a connection to the remote host.
-            NetTcpBinding binding = new NetTcpBinding(SecurityMode.Transport);
+            NetTcpBinding binding = new NetTcpBinding(SecurityMode.TransportWithMessageCredential);
+            binding.Security.Message.ClientCredentialType = MessageCredentialType.Windows;
             ChannelFactory<IAdminGroup> namedPipeFactory = new ChannelFactory<IAdminGroup>(binding, remoteHostAddress);
             IAdminGroup channel = namedPipeFactory.CreateChannel();
 

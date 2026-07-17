@@ -509,8 +509,8 @@ namespace SinclairCC.MakeMeAdmin
                     return Convert.ToBoolean(preferenceOverrideSetting.Value);
                 }
                 else
-                { // Neither the policy nor the preference registry entries had a value. Return a default value of false.
-                    return false;
+                { // Neither the policy nor the preference registry entries had a value. Default to requiring authentication.
+                    return true;
                 }
             }
             set
