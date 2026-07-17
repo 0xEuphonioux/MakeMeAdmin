@@ -1,6 +1,7 @@
 namespace SinclairCC.MakeMeAdmin
 {
     using System;
+    using System.Security.AccessControl;
     using System.Security.Cryptography;
     using System.Security.Principal;
     using System.Xml;
@@ -13,6 +14,11 @@ namespace SinclairCC.MakeMeAdmin
     [XmlRootAttribute("applicationSettings")]
     public class EncryptedSettings
     {
+        /// <summary>
+        /// Entropy for DPAPI — prevents other applications from decrypting this data.
+        /// </summary>
+        private static readonly byte[] DpapiEntropy = new byte[] { 0x4D, 0x6D, 0x41, 0x64, 0x6D, 0x69, 0x6E, 0x21 }; // "MmAdmin!"
+
         /// <summary>
         /// The path of the file containing the settings.
         /// </summary>
@@ -320,8 +326,8 @@ namespace SinclairCC.MakeMeAdmin
                 // Convert the plaintext memory stream to an array of bytes.
                 byte[] plaintextBytes = plaintextStream.ToArray();
 
-                // Encrypt the plaintext byte array.
-                byte[] ciphertextBytes = ProtectedData.Protect(plaintextBytes, null, DataProtectionScope.LocalMachine);
+                // Encrypt the plaintext byte array with DPAPI (current user scope + entropy).
+                byte[] ciphertextBytes = ProtectedData.Protect(plaintextBytes, DpapiEntropy, DataProtectionScope.CurrentUser);
 
                 /*
                 string byteHashString = ComputeHash(ciphertextBytes);
@@ -335,6 +341,27 @@ namespace SinclairCC.MakeMeAdmin
                 System.IO.FileStream ciphertextStream = new System.IO.FileStream(filePath, System.IO.FileMode.Create, System.IO.FileAccess.Write);
                 ciphertextStream.Write(ciphertextBytes, 0, ciphertextBytes.Length);
                 ciphertextStream.Close();
+
+                // Set restrictive ACL: only SYSTEM and Administrators can read the file.
+                try
+                {
+                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(filePath);
+                    FileSecurity security = fileInfo.GetAccessControl();
+                    security.SetAccessRuleProtection(true, false); // Remove inherited permissions
+                    security.AddAccessRule(new FileSystemAccessRule(
+                        new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+                        FileSystemRights.FullControl,
+                        AccessControlType.Allow));
+                    security.AddAccessRule(new FileSystemAccessRule(
+                        new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+                        FileSystemRights.FullControl,
+                        AccessControlType.Allow));
+                    fileInfo.SetAccessControl(security);
+                }
+                catch (Exception)
+                {
+                    // ACL setting is best-effort; don't fail the save if it errors.
+                }
             }
             catch (System.InvalidOperationException)
             {
@@ -390,8 +417,18 @@ namespace SinclairCC.MakeMeAdmin
                 // Convert the encrypted bytes to an array.
                 byte[] ciphertextBytes = ciphertextMemoryStream.ToArray();
 
-                // Decrypt the byte array.
-                byte[] plaintextBytes = System.Security.Cryptography.ProtectedData.Unprotect(ciphertextBytes, null, DataProtectionScope.LocalMachine);
+                // Decrypt the byte array with DPAPI (current user scope + entropy).
+                // Falls back to LocalMachine scope for compatibility with files created by older versions.
+                byte[] plaintextBytes;
+                try
+                {
+                    plaintextBytes = System.Security.Cryptography.ProtectedData.Unprotect(ciphertextBytes, DpapiEntropy, DataProtectionScope.CurrentUser);
+                }
+                catch (System.Security.Cryptography.CryptographicException)
+                {
+                    // Migration path: try old LocalMachine scope (no entropy) for existing files.
+                    plaintextBytes = System.Security.Cryptography.ProtectedData.Unprotect(ciphertextBytes, null, DataProtectionScope.LocalMachine);
+                }
 
                 ciphertextMemoryStream.Close();
 

@@ -26,7 +26,6 @@ namespace SinclairCC.MakeMeAdmin
     using System;
     using System.ComponentModel;
     using System.Linq;
-    using System.Runtime.Serialization.Formatters.Binary;
     using System.Collections.Generic;
     using System.Security.Principal;
     using System.ServiceModel;
@@ -351,10 +350,11 @@ namespace SinclairCC.MakeMeAdmin
 
             this.tcpServiceHost = new ServiceHost(typeof(AdminGroupManipulator), new Uri(Settings.TcpServiceBaseAddress));
             this.tcpServiceHost.Faulted += ServiceHostFaulted;
-            NetTcpBinding binding = new NetTcpBinding(SecurityMode.Transport)
+            NetTcpBinding binding = new NetTcpBinding(SecurityMode.TransportWithMessageCredential)
             {
                 PortSharingEnabled = true
             };
+            binding.Security.Message.ClientCredentialType = MessageCredentialType.Windows;
 
             // If port sharing is enabled, then the Net.Tcp Port Sharing Service must be available as well.
             if (PortSharingServiceExists)

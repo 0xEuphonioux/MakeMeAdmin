@@ -242,14 +242,11 @@ namespace SinclairCC.MakeMeAdmin
 
             // Check the authorization list.
             if (allowedSidsList == null)
-            { // The allowed list is null, meaning everyone is allowed administrator rights.
-                /*
+            { // The allowed list is null. Require explicit configuration — do NOT default to allow-all.
 #if DEBUG
-                ApplicationLog.WriteEvent("Allowed SIDs list is null.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
+                ApplicationLog.WriteEvent("Allowed SIDs list is null. Denying — explicit configuration required.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Warning);
 #endif
-                */
-
-                return true;
+                return false;
             }
             else if (allowedSidsList.Length == 0)
             { // The allowed list is empty, meaning no one is allowed administrator rights.
