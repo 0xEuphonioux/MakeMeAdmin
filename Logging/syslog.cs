@@ -150,52 +150,31 @@ namespace SinclairCC.MakeMeAdmin
         /// </param>
         public void SendMessage(string message, string messageId, SyslogNet.Client.Severity severity)
         {
-            /*
-            System.Net.IPHostEntry hostEntry = null;
-            try
-            {
-                hostEntry = System.Net.Dns.GetHostEntry(hostname);
-            }
-            catch (System.Net.Sockets.SocketException)
-            {
-                hostEntry = null;
-            }
+            SyslogNet.Client.SyslogMessage syslogMessage = new SyslogNet.Client.SyslogMessage(
+                System.DateTimeOffset.Now,
+                SyslogNet.Client.Facility.UserLevelMessages,
+                severity,
+                Settings.FullyQualifiedHostName,
+                AppName,
+                null,
+                messageId,
+                message);
 
-            if (hostEntry == null)
+            if (string.Compare(protocol, "TCP", true) == 0)
             {
-                // TODO: Cache these events.                    
-            }
-            else
-            {
-            */
-                SyslogNet.Client.SyslogMessage syslogMessage = new SyslogNet.Client.SyslogMessage(
-                    System.DateTimeOffset.Now,
-                    SyslogNet.Client.Facility.UserLevelMessages,
-                    severity,
-                    Settings.FullyQualifiedHostName,
-                    AppName,
-                    null,
-                    messageId,
-                    message);
-
-                if (string.Compare(protocol, "TCP", true) == 0)
-                {
-                    if (HostIsAvailableViaTcp(5))
-                    {
-                        Sender.Send(syslogMessage, Serializer);
-                    }
-                    else
-                    {
-                        // TODO: Cache these events.
-                    }
-                }
-                else if (string.Compare(protocol, "UDP", true) == 0)
+                if (HostIsAvailableViaTcp(5))
                 {
                     Sender.Send(syslogMessage, Serializer);
                 }
-            /*
+                else
+                {
+                    throw new TimeoutException(string.Format("TCP syslog host {0}:{1} is not reachable.", hostname, port));
+                }
             }
-            */
+            else if (string.Compare(protocol, "UDP", true) == 0)
+            {
+                Sender.Send(syslogMessage, Serializer);
+            }
         }
 
         /// <summary>

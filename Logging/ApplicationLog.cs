@@ -205,7 +205,20 @@ namespace SinclairCC.MakeMeAdmin
                 if (serverInfo.IsValid)
                 {
                     Syslog syslog = new Syslog(serverInfo.Hostname, serverInfo.Port, serverInfo.Protocol, serverInfo.RFC);
-                    tasks[j] = Task.Factory.StartNew(() => syslog.SendMessage(message, id.ToString(), severity));
+                    tasks[j] = Task.Factory.StartNew(() =>
+                    {
+                        try
+                        {
+                            syslog.SendMessage(message, id.ToString(), severity);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Fall back to Event Log so syslog failures are visible
+                            log.WriteEntry(
+                                string.Format("Syslog send failed ({0}:{1}): {2}", serverInfo.Hostname, serverInfo.Port, ex.Message),
+                                System.Diagnostics.EventLogEntryType.Warning, (int)EventID.DebugMessage);
+                        }
+                    });
                 }
                 j++;
             }
