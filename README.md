@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.6.1.x64.msi">
-    <img src="https://img.shields.io/badge/⬇️_Download_Installer-v2.6.1-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Installer">
+  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.0.x64.msi">
+    <img src="https://img.shields.io/badge/⬇️_Download_Installer-v2.5.0-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Installer">
   </a>
 </p>
 
@@ -30,13 +30,13 @@ Make Me Admin lets **standard users** temporarily elevate to administrator — w
 - 📡 **SIEM-ready** — forwards all events to syslog (Splunk, Sentinel, etc.)
 - ☁️ **Entra ID / hybrid-join** — works with on-prem AD, Azure AD, and hybrid deployments
 
-> **⚠️ This is a fork** of [pseymour/MakeMeAdmin](https://github.com/pseymour/MakeMeAdmin) with security hardening, Entra ID auth fixes, and syslog improvements.
+> **⚠️ This is a fork** of [pseymour/MakeMeAdmin](https://github.com/pseymour/MakeMeAdmin) with security hardening, Entra ID auth fixes, Windows Hello support, and syslog improvements.
 
 ---
 
 ## Quick Install
 
-1. **[Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.6.1.x64.msi)**
+1. **[Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.0.x64.msi)**
 2. Run it **as Administrator**
 3. That's it — the service starts automatically
 
@@ -73,7 +73,6 @@ HKLM\SOFTWARE\Sinclair Community College\Make Me Admin\           (Local)
 | `Allow Windows Hello Authentication` | DWORD | 1 (Yes) | Enable PIN/fingerprint/face verification |
 | `Remove Admin Rights On Logout` | DWORD | 1 (Yes) | Auto-revoke on sign-out |
 | `Log Elevated Processes` | DWORD | 0 (No) | Log when admin processes launch |
-| `Syslog Servers` | — | — | Configure syslog forwarding |
 
 See the [upstream wiki](https://github.com/pseymour/MakeMeAdmin/wiki) for full documentation.
 
@@ -81,46 +80,29 @@ See the [upstream wiki](https://github.com/pseymour/MakeMeAdmin/wiki) for full d
 
 ## Version History
 
-### v2.6.1 — Security Hardening
-- 🛡️ **Default-deny policy** — remote administration now denies by default; explicit allow-list required
+### v2.5.0
+
+**Authentication & Identity**
+- 🔐 **Windows Hello support** — PIN, fingerprint, or facial recognition via `UserConsentVerifier` API (TPM-backed, same mechanism UAC uses)
+- ☁️ **Entra ID / hybrid-join detection** — `NetGetAadJoinInformation` for seamless cloud-domain auth
+- 🔄 **UPN normalization** — works with any Entra ID tenant, including hybrid-joined devices
+
+**Security Hardening**
+- 🛡️ **Default-deny policy** — remote administration denies by default; explicit allow-list required
 - 🔐 **Authentication required by default** — `RequireAuthentication` defaults to `true`
 - 🔒 **DPAPI hardening** — encrypted settings use `CurrentUser` scope + entropy salt (was `LocalMachine`)
 - 📡 **WCF transport upgrade** — `TransportWithMessageCredential` binding replaces plain TCP
 - 🧹 **BinaryFormatter removed** — eliminated unsafe deserialization surface
-- 🔏 **User data ACL** — restrictive DACL applied to `users.xml` (Authenticated Users read, Admins full control)
+- 🔏 **User data ACL** — restrictive DACL applied to `users.xml`
 
-### v2.6.0
-- 🔐 **Windows Hello support** — PIN, fingerprint, or facial recognition via `UserConsentVerifier` API (TPM-backed, same mechanism UAC uses)
-- 🛡️ `@@` CloudAP token rejection — prevents cached-session bypass in password path
-- 🐛 **Fixed**: UPN auth loop on hybrid-joined devices — credential dialog returned `DOMAIN\username@upn` but identity was `DOMAIN\username`
-- 🐛 **Fixed**: empty username from silent CloudAP auto-auth now properly rejected
-
-### v2.5.11
-- 🐛 **Fixed**: UPN suffix mismatch on hybrid-joined devices (backport of v2.6.0 fix)
-
-### v2.5.10
-- 🐛 **Fixed**: Entra ID UPN re-prompt loop — normalized domain prefix in name comparison
-
-### v2.5.9
-- ⏪ Reverted to v2.5.4 auth logic + hard block on Windows Hello (`@@` token check)
-
-### v2.5.8
-- 🐛 **Fixed**: credential dialog re-prompt on password mismatch (returned `@@` tokens)
-
-### v2.5.6
-- 🔐 Windows Hello detection — identifies and rejects CloudAP `@@` credential tokens
-
-### v2.5.4
-- 🔐 **CRITICAL**: Fixed auth bypass on Entra ID-joined devices (wrong passwords could grant admin)
-- 🛡️ Credential blob sanitization — CloudAP tokens never leak to logs
-- 🛠️ Cancel on reason prompt now properly cancels admin request
-- 📦 MSI `DisplayVersion` fixed (was stuck at 2.5.0)
-
-### v2.5.0
-- ☁️ Entra ID / hybrid-join detection (`NetGetAadJoinInformation`)
-- 🔄 UPN normalization — works with any Entra ID tenant
-- 📡 Syslog forwarding for elevated process events
-- ⚙️ GitHub Actions CI/CD for MSI builds
+**Operations & CI**
+- 📡 **Syslog forwarding** for all elevated process events
+- 🛡️ Credential blob sanitization — secrets never leak to logs
+- 🐛 Fixed auth bypass on Entra ID-joined devices
+- 🐛 Fixed UPN suffix mismatch on hybrid-joined devices
+- 🐛 Fixed credential dialog re-prompt on password mismatch
+- 📦 MSI `DisplayVersion` now correctly reflects the installed version
+- ⚙️ GitHub Actions CI/CD for automated MSI builds
 
 ### v2.4.2
 - 📡 Syslog forwarding infrastructure
@@ -136,7 +118,7 @@ cd MakeMeAdmin
 # Or trigger the GitHub Actions workflow
 ```
 
-Requires: Visual Studio 2022+, WiX Toolset v4, .NET Framework 4.8.
+Requires: Visual Studio 2022+, WiX Toolset v3 & v4, .NET Framework 4.8.
 
 ---
 
