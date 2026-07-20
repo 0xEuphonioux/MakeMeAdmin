@@ -36,7 +36,6 @@ jobs:
           msbuild RemoteUI/RemoteUI.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
           msbuild Service/Service.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
           msbuild WiXCustomAction/WiXCustomAction.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:Wix3Dir="$env:WIX3_DIR"
-          msbuild ProcessCommunication/ProcessCommunication.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
         shell: pwsh
 
       - name: Install WiX Toolset v4
