@@ -539,10 +539,10 @@ namespace SinclairCC.MakeMeAdmin
                 NTAccount account = (NTAccount)sid.Translate(typeof(NTAccount));
                 return account.Value;
             }
-            catch (System.SystemException) { }
             catch (IdentityNotMappedException) { }
             catch (System.ArgumentNullException) { }
             catch (System.ArgumentException) { }
+            catch (System.SystemException) { }
 
             // 2. Try Windows IdentityStore cache (Entra ID / Azure AD groups/roles)
             //    HKLM\SOFTWARE\Microsoft\IdentityStore\Cache\<SID>\IdentityCache
