@@ -202,11 +202,11 @@ namespace SinclairCC.MakeMeAdmin
                 EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
                 encryptedSettings.AddUser(userIdentity, expirationTime, remoteAddress);
 
-                AddUserToAdministrators(userIdentity.User, reason);
+                AddUserToAdministrators(userIdentity.User, reason, userIdentity.Name);
             }
             else
             {
-                string accountName = (userIdentity?.User != null) ? GetAccountNameFromSID(userIdentity.User) : "unknown";
+                string accountName = userIdentity?.Name ?? "unknown";
                 string reasonNote = string.IsNullOrEmpty(reason) ? "" : string.Format(" (reason: \"{0}\")", reason);
                 ApplicationLog.WriteEvent(
                     string.Format("Authorization denied for user {0}{1}. Check allowed/denied entity lists.", accountName, reasonNote),
@@ -220,25 +220,25 @@ namespace SinclairCC.MakeMeAdmin
         /// <param name="userSid">
         /// The security identifier (SID) to be added to the local Administrators group.
         /// </param>
-        private static bool AddUserToAdministrators(SecurityIdentifier userSid, string reason = null)
+        private static bool AddUserToAdministrators(SecurityIdentifier userSid, string reason = null, string identityName = null)
         {
             try
             {
-                string accountName = GetAccountNameFromSID(userSid);
+                string displayName = identityName ?? GetAccountNameFromSID(userSid);
                 ApplicationLog.WriteEvent(
-                    string.Format("Attempting to add {0} to the {1} group.", accountName, LocalAdminGroupName),
+                    string.Format("Attempting to add {0} (SID: {1}) to the {2} group.", displayName, userSid.Value, LocalAdminGroupName),
                     EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
 
                 int result = AddLocalGroupMembers(LocalAdminGroupName, userSid);
                 if (result == 0)
                 {
                     string reasonSuffix = string.IsNullOrEmpty(reason) ? "" : string.Format(" Reason: {0}.", reason);
-                    ApplicationLog.WriteEvent(string.Format(Properties.Resources.UserAddedToAdminsGroup, userSid, accountName) + reasonSuffix, EventID.UserAddedToAdminsSuccess, System.Diagnostics.EventLogEntryType.Information);
+                    ApplicationLog.WriteEvent(string.Format(Properties.Resources.UserAddedToAdminsGroup, userSid, displayName) + reasonSuffix, EventID.UserAddedToAdminsSuccess, System.Diagnostics.EventLogEntryType.Information);
                     return true;
                 }
                 else
                 {
-                    ApplicationLog.WriteEvent(string.Format(Properties.Resources.AddingUserReturnedError, userSid, accountName, result), EventID.UserAddedToAdminsFailure, System.Diagnostics.EventLogEntryType.Warning);
+                    ApplicationLog.WriteEvent(string.Format(Properties.Resources.AddingUserReturnedError, userSid, displayName, result), EventID.UserAddedToAdminsFailure, System.Diagnostics.EventLogEntryType.Warning);
                     return false;
                 }
             }

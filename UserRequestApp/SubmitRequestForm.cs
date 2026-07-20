@@ -391,7 +391,6 @@ namespace SinclairCC.MakeMeAdmin
                                         break;
                                     case DialogResult.OK:
                                         _grantReason = reasonDialog.Reason;
-                                        ApplicationLog.WriteEvent(string.Format(Properties.Resources.ReasonProvidedByUser, reasonDialog.Reason), EventID.ReasonProvidedByUser, System.Diagnostics.EventLogEntryType.Information);
                                         break;
                                     default:
                                         // Not sure how we got to this point, because it should never happen.
@@ -431,7 +430,6 @@ namespace SinclairCC.MakeMeAdmin
                                         {
                                             dialogSatisfied = true;
                                             _grantReason = reasonDialog.Reason;
-                                            ApplicationLog.WriteEvent(string.Format(Properties.Resources.ReasonProvidedByUser, reasonDialog.Reason), EventID.ReasonProvidedByUser, System.Diagnostics.EventLogEntryType.Information);
                                         }
                                         break;
                                     default:
