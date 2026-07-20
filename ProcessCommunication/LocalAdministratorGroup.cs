@@ -23,6 +23,7 @@ namespace SinclairCC.MakeMeAdmin
     using System;
     using System.DirectoryServices.AccountManagement;
     using System.Security.Principal;
+    using System.Text;
 
     /// <summary>
     /// This class allows management of the local Administrators group.
@@ -516,52 +517,92 @@ namespace SinclairCC.MakeMeAdmin
         /// <summary>
         /// Gets the human-friendly account name corresponding to a given
         /// security identifier (SID).
+        /// 
+        /// Resolution order (5-tier fallback):
+        ///   1. .NET Translate(typeof(NTAccount)) – normal user/group SIDs
+        ///   2. IdentityStore cache – Entra ID groups cached locally
+        ///   3. Win32 LookupAccountSid – capability SIDs, domain SIDs
+        ///   4. [AppContainer] prefix for S-1-12-* SIDs
+        ///   5. Raw SID string – never returns null
         /// </summary>
         /// <param name="sid">
         /// The security identifier (SID) for which the account name should be retrieved.
         /// </param>
         /// <returns>
-        /// Returns a string containing the name of the account corresponding to the given
-        /// SID. If the account name cannot be determined or the SID does not belong to a
-        /// valid Windows account, null is returned.
+        /// Returns the account name or a fallback string. Never returns null.
         /// </returns>
         internal static string GetAccountNameFromSID(SecurityIdentifier sid)
         {
-            if (sid.IsAccountSid() && sid.IsValidTargetType(typeof(NTAccount)))
+            // 1. Try .NET Translate (works for most account SIDs)
+            try
             {
-                try
+                NTAccount account = (NTAccount)sid.Translate(typeof(NTAccount));
+                return account.Value;
+            }
+            catch (System.SystemException) { }
+            catch (IdentityNotMappedException) { }
+            catch (System.ArgumentNullException) { }
+            catch (System.ArgumentException) { }
+
+            // 2. Try Windows IdentityStore cache (Entra ID / Azure AD groups/roles)
+            //    HKLM\SOFTWARE\Microsoft\IdentityStore\Cache\<SID>\IdentityCache
+            try
+            {
+                string cacheKeyPath = string.Format(
+                    @"SOFTWARE\Microsoft\IdentityStore\Cache\{0}\IdentityCache",
+                    sid.Value);
+
+                using (var cacheKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(cacheKeyPath))
                 {
-                    try
+                    if (cacheKey != null)
                     {
-                        NTAccount account = (NTAccount)sid.Translate(typeof(NTAccount));
-                        return account.Value;
+                        string displayName = cacheKey.GetValue("DisplayName") as string;
+                        if (!string.IsNullOrEmpty(displayName))
+                        {
+                            return displayName;
+                        }
                     }
-                    catch (System.SystemException)
-                    {
-                        return null;
-                    }
-                }
-                catch (IdentityNotMappedException)
-                { // Some or all identity references could not be translated.
-                    return null;
-                }
-                catch (System.ArgumentNullException)
-                { // The target translation type is null.
-                    return null;
-                }
-                catch (System.ArgumentException)
-                { // The target translation type is not an IdentityReference type.
-                    return null;
-                }
-                catch (System.SystemException)
-                { // A Win32 error code was returned.
-                    return null;
                 }
             }
-            else
+            catch { }
+
+            // 3. Try Win32 LookupAccountSid (handles capability SIDs, domain SIDs)
+            try
             {
-                return null;
+                byte[] sidBytes = new byte[sid.BinaryLength];
+                sid.GetBinaryForm(sidBytes, 0);
+
+                uint nameLen = 256;
+                uint domainLen = 256;
+                StringBuilder name = new StringBuilder((int)nameLen);
+                StringBuilder domain = new StringBuilder((int)domainLen);
+
+                if (NativeMethods.LookupAccountSid(
+                    null,
+                    sidBytes,
+                    name,
+                    ref nameLen,
+                    domain,
+                    ref domainLen,
+                    out NativeMethods.SID_NAME_USE peUse))
+                {
+                    if (domain.Length > 0)
+                    {
+                        return domain.ToString() + "\\" + name.ToString();
+                    }
+                    return name.ToString();
+                }
             }
+            catch { }
+
+            // 4. For capability/AppContainer SIDs, prefix with label
+            if (sid.Value.StartsWith("S-1-12-"))
+            {
+                return "[AppContainer] " + sid.Value;
+            }
+
+            // 5. Last resort: return the raw SID (never null)
+            return sid.Value;
         }
 
         /// <summary>
