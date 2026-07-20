@@ -225,20 +225,18 @@ namespace SinclairCC.MakeMeAdmin
             try
             {
                 string displayName = identityName ?? GetAccountNameFromSID(userSid);
-                ApplicationLog.WriteEvent(
-                    string.Format("Attempting to add {0} (SID: {1}) to the {2} group.", displayName, userSid.Value, LocalAdminGroupName),
-                    EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
 
                 int result = AddLocalGroupMembers(LocalAdminGroupName, userSid);
                 if (result == 0)
                 {
-                    string reasonSuffix = string.IsNullOrEmpty(reason) ? "" : string.Format(" Reason: {0}.", reason);
-                    ApplicationLog.WriteEvent(string.Format(Properties.Resources.UserAddedToAdminsGroup, userSid, displayName) + reasonSuffix, EventID.UserAddedToAdminsSuccess, System.Diagnostics.EventLogEntryType.Information);
+                    string reasonSuffix = string.IsNullOrEmpty(reason) ? "" : string.Format(". Reason: {0}", reason);
+                    string message = string.Format("User {0} ({1}) added to the Administrators group{2}.", displayName, userSid.Value, reasonSuffix);
+                    ApplicationLog.WriteEvent(message, EventID.UserAddedToAdminsSuccess, System.Diagnostics.EventLogEntryType.Information);
                     return true;
                 }
                 else
                 {
-                    ApplicationLog.WriteEvent(string.Format(Properties.Resources.AddingUserReturnedError, userSid, displayName, result), EventID.UserAddedToAdminsFailure, System.Diagnostics.EventLogEntryType.Warning);
+                    ApplicationLog.WriteEvent(string.Format("Error adding user {0} ({1}) to Administrators group: {2}", displayName, userSid.Value, result), EventID.UserAddedToAdminsFailure, System.Diagnostics.EventLogEntryType.Warning);
                     return false;
                 }
             }
