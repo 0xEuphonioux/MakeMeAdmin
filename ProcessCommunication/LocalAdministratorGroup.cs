@@ -229,8 +229,8 @@ namespace SinclairCC.MakeMeAdmin
                 int result = AddLocalGroupMembers(LocalAdminGroupName, userSid);
                 if (result == 0)
                 {
-                    string reasonSuffix = string.IsNullOrEmpty(reason) ? "" : string.Format(". Reason: {0}", reason);
-                    string message = string.Format("User {0} ({1}) added to the Administrators group{2}.", displayName, userSid.Value, reasonSuffix);
+                    string reasonSuffix = string.IsNullOrEmpty(reason) ? "" : string.Format(" Reason: {0}", reason);
+                    string message = string.Format("User {0} added to the Administrators group. SID={1}{2}", displayName, userSid.Value, reasonSuffix);
                     ApplicationLog.WriteEvent(message, EventID.UserAddedToAdminsSuccess, System.Diagnostics.EventLogEntryType.Information);
                     return true;
                 }
