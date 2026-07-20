@@ -161,5 +161,37 @@ namespace SinclairCC.MakeMeAdmin
                      [In, MarshalAs(UnmanagedType.LPWStr)] string UncClientName,
                      [In, MarshalAs(UnmanagedType.LPWStr)] string UserName);
 
+        /// <summary>
+        /// Enumeration of SID_NAME_USE values for LookupAccountSid.
+        /// </summary>
+        internal enum SID_NAME_USE
+        {
+            SidTypeUser = 1,
+            SidTypeGroup,
+            SidTypeDomain,
+            SidTypeAlias,
+            SidTypeWellKnownGroup,
+            SidTypeDeletedAccount,
+            SidTypeInvalid,
+            SidTypeUnknown,
+            SidTypeComputer,
+            SidTypeLabel,
+            SidTypeLogonSession,
+        }
+
+        /// <summary>
+        /// Retrieves the name of the account for the specified SID and the name
+        /// of the first domain in which the SID is found.
+        /// </summary>
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        internal static extern bool LookupAccountSid(
+            string lpSystemName,
+            byte[] Sid,
+            StringBuilder lpName,
+            ref uint cchName,
+            StringBuilder lpReferencedDomainName,
+            ref uint cchReferencedDomainName,
+            out SID_NAME_USE peUse);
+
     }
 }
