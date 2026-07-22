@@ -59,6 +59,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v2.5.0
+          name: v2.5.0
           files: Installers/**/*.msi
           prerelease: false
           make_latest: true
@@ -73,12 +74,12 @@ jobs:
             - Unified single-line syslog format with structured `SID=` field for SIEM integration
 
             ### Security Fixes
-            - Default-deny policy -- remote administration requires explicit allow-list (VULN-01)
-            - Authentication required by default (VULN-02)
-            - DPAPI hardening -- `CurrentUser` scope with entropy salt (VULN-03)
-            - WCF transport upgrade to `TransportWithMessageCredential` (VULN-04)
-            - BinaryFormatter import removed (VULN-05)
-            - Restrictive ACL on user data file (VULN-06)
+            - Default-deny policy for remote administration; explicit allow-list required
+            - Authentication required by default for all privilege elevations
+            - DPAPI encryption hardened with `CurrentUser` scope and entropy salt
+            - WCF transport upgraded to `TransportWithMessageCredential`
+            - Unused BinaryFormatter import removed
+            - Restrictive ACL applied to user data file
 
             ### Operations
             - Syslog forwarding for all elevation and process events
