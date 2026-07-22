@@ -1,62 +1,52 @@
 # Make Me Admin
 
-<p align="center">
-  <img src="SecurityLock.png" width="80" alt="Make Me Admin"><br>
-  <strong>Temporary Administrator Privileges for Windows</strong><br>
-  <em>Entra ID &bull; Syslog &bull; Biometric &bull; Enterprise-ready</em>
-</p>
+**Temporary Administrator Privileges for Windows**
 
-<p align="center">
-  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.0.x64.msi">
-    <img src="https://img.shields.io/badge/⬇️_Download_Installer-v2.5.0-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Installer">
-  </a>
-</p>
+*Entra ID | Syslog | Biometric | Enterprise-ready*
 
-<p align="center">
-  <a href="https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest">All releases</a> &bull;
-  <a href="https://github.com/pseymour/MakeMeAdmin/wiki">Documentation</a> &bull;
-  <a href="https://github.com/pseymour/MakeMeAdmin">Upstream</a>
-</p>
+[Download Installer (v2.5.0)](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.0.x64.msi)
+
+[All releases](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest) | [Documentation](https://github.com/pseymour/MakeMeAdmin/wiki) | [Upstream](https://github.com/pseymour/MakeMeAdmin)
 
 ---
 
-## What is it?
+## Overview
 
-Make Me Admin lets **standard users** temporarily elevate to administrator — without IT intervention. Think `sudo` for Windows.
+Make Me Admin allows standard users to temporarily elevate to administrator without IT intervention. Similar to `sudo` on Unix systems.
 
-- 🕐 **Auto-expires** — rights are removed after a configurable timeout
-- 🔐 **Authenticated** — Windows Hello (PIN, fingerprint, face) or password
-- 📋 **Reason tracking** — optional/required justification with canned reasons
-- 📡 **SIEM-ready** — forwards all events to syslog (Splunk, Sentinel, etc.)
-- ☁️ **Entra ID / hybrid-join** — works with on-prem AD, Azure AD, and hybrid deployments
+- **Auto-expiring** -- rights are revoked after a configurable timeout
+- **Authenticated** -- Windows Hello (PIN, fingerprint, face) or password verification
+- **Reason tracking** -- optional or required justification with predefined and free-text reasons
+- **SIEM integration** -- all elevation events forwarded to syslog (Splunk, Microsoft Sentinel, etc.)
+- **Entra ID and hybrid-join** -- compatible with on-premises AD, Entra ID, and hybrid deployments
 
-> **⚠️ This is a fork** of [pseymour/MakeMeAdmin](https://github.com/pseymour/MakeMeAdmin) with security hardening, Entra ID auth fixes, Windows Hello support, and syslog improvements.
+> This is a fork of [pseymour/MakeMeAdmin](https://github.com/pseymour/MakeMeAdmin) with security hardening, Entra ID authentication fixes, Windows Hello support, SID resolution improvements, and unified syslog event logging.
 
 ---
 
 ## Quick Install
 
-1. **[Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.0.x64.msi)**
-2. Run it **as Administrator**
-3. That's it — the service starts automatically
+1. [Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.0.x64.msi)
+2. Run the installer as Administrator
+3. The service starts automatically on install
 
 ### Upgrade
 
-Install the new MSI over your existing version. All settings are preserved.
+Install the new MSI over your existing version. All registry settings and configuration are preserved.
 
 ### Uninstall
 
-From **Settings → Apps → Make Me Admin**, or silently:
+From **Settings > Apps > Make Me Admin**, or silently:
 
 ```cmd
-msiexec /x {GUID} /qn
+msiexec /x {PRODUCT-GUID} /qn
 ```
 
 ---
 
 ## Configuration
 
-Settings are managed via **Group Policy** or **registry**:
+Settings are applied via **Group Policy** or **registry**:
 
 ```
 HKLM\SOFTWARE\Policies\Sinclair Community College\Make Me Admin\  (GPO)
@@ -65,16 +55,16 @@ HKLM\SOFTWARE\Sinclair Community College\Make Me Admin\           (Local)
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `Admin Rights Timeout` | DWORD | 30 | Minutes before auto-revoke |
+| `Admin Rights Timeout` | DWORD | 30 | Minutes before automatic revocation |
 | `Prompt For Reason` | DWORD | 0 (None) | 0=None, 1=Optional, 2=Required |
 | `Allow Free Text Reason` | DWORD | 1 (Yes) | Allow custom reason text |
-| `Canned Reasons` | MULTI_SZ | — | Predefined reason dropdown options |
-| `Require Authentication For Privileges` | DWORD | 1 (Yes) | Require password/biometric |
-| `Allow Windows Hello Authentication` | DWORD | 1 (Yes) | Enable PIN/fingerprint/face verification |
-| `Remove Admin Rights On Logout` | DWORD | 1 (Yes) | Auto-revoke on sign-out |
-| `Log Elevated Processes` | DWORD | 0 (No) | Log when admin processes launch |
+| `Canned Reasons` | MULTI_SZ | -- | Predefined reason dropdown values |
+| `Require Authentication For Privileges` | DWORD | 1 (Yes) | Require password or biometric verification |
+| `Allow Windows Hello Authentication` | DWORD | 1 (Yes) | Enable PIN, fingerprint, or facial recognition |
+| `Remove Admin Rights On Logout` | DWORD | 1 (Yes) | Revoke rights on user sign-out |
+| `Log Elevated Processes` | DWORD | 0 (No) | Log elevation events for launched processes |
 
-See the [upstream wiki](https://github.com/pseymour/MakeMeAdmin/wiki) for full documentation.
+Full documentation is available in the [upstream wiki](https://github.com/pseymour/MakeMeAdmin/wiki).
 
 ---
 
@@ -82,30 +72,28 @@ See the [upstream wiki](https://github.com/pseymour/MakeMeAdmin/wiki) for full d
 
 ### v2.5.0
 
-**Authentication & Identity**
-- 🔐 **Windows Hello support** — PIN, fingerprint, or facial recognition via `UserConsentVerifier` API (TPM-backed, same mechanism UAC uses)
-- ☁️ **Entra ID / hybrid-join detection** — `NetGetAadJoinInformation` for seamless cloud-domain auth
-- 🔄 **UPN normalization** — works with any Entra ID tenant, including hybrid-joined devices
+**Authentication and Identity**
+- Windows Hello support -- PIN, fingerprint, or facial recognition via `UserConsentVerifier` API
+- Entra ID / hybrid-join detection via `NetGetAadJoinInformation`
+- UPN normalization for hybrid-joined devices
+- SID-to-name resolution with 5-tier fallback, including Entra ID IdentityStore cache lookup
+- Unified single-line syslog format with structured `SID=` field
 
-**Security Hardening**
-- 🛡️ **Default-deny policy** — remote administration denies by default; explicit allow-list required
-- 🔐 **Authentication required by default** — `RequireAuthentication` defaults to `true`
-- 🔒 **DPAPI hardening** — encrypted settings use `CurrentUser` scope + entropy salt (was `LocalMachine`)
-- 📡 **WCF transport upgrade** — `TransportWithMessageCredential` binding replaces plain TCP
-- 🧹 **BinaryFormatter removed** — eliminated unsafe deserialization surface
-- 🔏 **User data ACL** — restrictive DACL applied to `users.xml`
+**Security Fixes**
+- Default-deny policy: remote administration requires explicit allow-list
+- Authentication required by default (`RequireAuthentication` defaults to `true`)
+- DPAPI hardening: encrypted settings use `CurrentUser` scope with entropy salt
+- WCF transport upgrade: `TransportWithMessageCredential` replaces plain TCP binding
+- BinaryFormatter import removed
+- Restrictive ACL applied to user data file
 
-**Operations & CI**
-- 📡 **Syslog forwarding** for all elevated process events
-- 🛡️ Credential blob sanitization — secrets never leak to logs
-- 🐛 Fixed auth bypass on Entra ID-joined devices
-- 🐛 Fixed UPN suffix mismatch on hybrid-joined devices
-- 🐛 Fixed credential dialog re-prompt on password mismatch
-- 📦 MSI `DisplayVersion` now correctly reflects the installed version
-- ⚙️ GitHub Actions CI/CD for automated MSI builds
+**Operations and CI**
+- Syslog forwarding for all elevation and process events
+- Credential data excluded from all log output
+- GitHub Actions CI/CD for automated MSI builds
 
 ### v2.4.2
-- 📡 Syslog forwarding infrastructure
+- Syslog forwarding infrastructure
 
 ---
 
@@ -114,14 +102,12 @@ See the [upstream wiki](https://github.com/pseymour/MakeMeAdmin/wiki) for full d
 ```cmd
 git clone https://github.com/0xEuphonioux/MakeMeAdmin.git
 cd MakeMeAdmin
-# Open in Visual Studio, restore NuGet packages, build
-# Or trigger the GitHub Actions workflow
 ```
 
-Requires: Visual Studio 2022+, WiX Toolset v3 & v4, .NET Framework 4.8.
+Open `MakeMeAdmin.sln` in Visual Studio 2022 or later. Restore NuGet packages and build the solution.
+
+Requirements: Visual Studio 2022+, WiX Toolset v3 and v4, .NET Framework 4.8.
 
 ---
 
-<p align="center">
-  <sub>Forked from <a href="https://github.com/pseymour/MakeMeAdmin">pseymour/MakeMeAdmin</a> &bull; Licensed under GPL v3</sub>
-</p>
+Forked from [pseymour/MakeMeAdmin](https://github.com/pseymour/MakeMeAdmin) | Licensed under GPL v3

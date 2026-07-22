@@ -1,9 +1,9 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 https://github.com/0xEuphonioux/MakeMeAdmin/commits/master
 
@@ -11,235 +11,163 @@ https://github.com/0xEuphonioux/MakeMeAdmin/commits/master
 
 ### Added
 
-- **Windows Hello support** — PIN, fingerprint, or facial recognition via `UserConsentVerifier` API (TPM-backed, same mechanism UAC uses).
-- **Entra ID / hybrid-join detection** — `NetGetAadJoinInformation` for seamless cloud-domain auth.
-- **UPN normalization** — works with any Entra ID tenant, including hybrid-joined devices.
-- **Syslog forwarding** for elevated process events (Splunk, Sentinel, etc.).
-- **Allow Windows Hello Authentication** policy setting (DWORD, default: enabled).
+- Windows Hello support -- PIN, fingerprint, or facial recognition via `UserConsentVerifier` API (TPM-backed).
+- Entra ID / hybrid-join detection -- `NetGetAadJoinInformation` for cloud-domain authentication.
+- UPN normalization -- works with any Entra ID tenant, including hybrid-joined devices.
+- Syslog forwarding for elevated process events (Splunk, Sentinel, etc.).
+- Allow Windows Hello Authentication policy setting (DWORD, default: enabled).
+- SID-to-name resolution with 5-tier fallback for Entra ID group and role SIDs.
+- Unified single-line syslog format with structured `SID=` field for Graylog and SIEM integration.
 
 ### Changed
 
-- **Default-deny policy** — remote administration now denies by default; explicit allow-list required.
-- **Authentication required by default** — `RequireAuthentication` defaults to `true`.
-- **DPAPI hardening** — encrypted settings use `CurrentUser` scope + entropy salt (was `LocalMachine`).
-- **WCF transport upgrade** — `TransportWithMessageCredential` binding replaces plain TCP.
+- Default-deny policy -- remote administration now denies by default; explicit allow-list required.
+- Authentication required by default -- `RequireAuthentication` defaults to `true`.
+- DPAPI hardening -- encrypted settings use `CurrentUser` scope with entropy salt (was `LocalMachine`).
+- WCF transport upgrade -- `TransportWithMessageCredential` binding replaces plain TCP.
 - MSI `DisplayVersion` now correctly reflects the installed version.
 
 ### Removed
 
-- **BinaryFormatter** — eliminated unsafe deserialization surface.
+- BinaryFormatter -- eliminated unsafe deserialization surface.
 
 ### Fixed
 
-- **Critical**: Auth bypass on Entra ID-joined devices (wrong passwords could grant admin).
-- UPN suffix mismatch on hybrid-joined devices (credential dialog returned `DOMAIN\username@upn` but identity was `DOMAIN\username`).
-- Credential dialog re-prompt loop on password mismatch (returned `@@` CloudAP tokens).
+- Authentication bypass on Entra ID-joined devices (invalid credentials could grant admin rights).
+- UPN suffix mismatch on hybrid-joined devices.
+- Credential dialog re-prompt loop on password mismatch.
 - Empty username from silent CloudAP auto-auth now properly rejected.
-- Cancel on reason prompt now properly cancels admin request.
+- Cancel on reason prompt now correctly cancels admin request.
 
 ### Security
 
-- **User data ACL hardening** — restrictive DACL applied to `users.xml` (Authenticated Users read, Admins full control).
-- Credential blob sanitization — CloudAP tokens never leak to logs.
+- User data ACL hardening -- restrictive DACL applied to `users.xml` (Authenticated Users read, Administrators full control).
+- Credential data excluded from all log output.
 - GitHub Actions CI/CD for automated MSI builds.
 
 ## [2.4.1] - 2025-11-13
 
 ### Added
 
-- Added localization for German.
+- German localization.
 
 ### Removed
 
-- Removed references to the Multilingual App Toolkit, which is now out of support.
+- References to Multilingual App Toolkit (out of support).
 
 ### Fixed
 
-- Globalized the remote UI, so the German translations would be displayed.
-
-
+- Remote UI now displays German translations correctly.
 
 ## [2.4.0] - 2025-10-31
 
 ### Added
 
-- Added an optional dialog box to prompt the user to enter their reason for needing administrator rights.
-- Added the ability to log off a user when their administrator rights expire. The message displayed before log off is customizable.
-- Added logging of elevated processes.
-- Added the ability to prompt the user for authentication before rights are granted.
-- Added a setting to control which port the remote feature uses. 
-- Added feature to allow renewal of rights after expiration.
-- Added a setting to control whether the UI closes after the user's rights expire.
-- Added Danish translation, thanks to **Bjørn Kelsen**.
-- Modified the installer to remove the added user XML file upon uninstallation.
-- Modified the installer to add the product version to the registry.
-  - The version number will be stored in the value ``InstalledVersion`` at ``HKEY_LOCAL_MACHINE\SOFTWARE\Sinclair Community College\Make Me Admin``.
+- Optional dialog prompt for elevation reason.
+- User logoff on admin rights expiration with customizable message.
+- Elevated process logging.
+- Authentication prompt before rights grant.
+- Configurable remote feature port.
+- Rights renewal after expiration.
+- UI close-after-expiry setting.
+- Danish translation (Bjorn Kelsen).
+- Installer removes added user XML file on uninstall.
+- Product version written to registry at `HKEY_LOCAL_MACHINE\SOFTWARE\Sinclair Community College\Make Me Admin\InstalledVersion`.
 
 ### Changed
 
-- Significant speed improvement in the code that checks the user against the allowed and denied lists, thanks to [Martin Sheppard](https://github.com/martshep).
-- Changed the service's Event Log source name to "Make Me Admin," adding spacing between the words.
-- Updated group policy templates to reflect change from SIDs only to SIDs or names, thanks to **Jakob Dahl**.
-- Migrated from .NET Framework version 4.5.2 to version 4.8.
+- Significant performance improvement in allowed/denied list checks (Martin Sheppard).
+- Event Log source renamed to "Make Me Admin".
+- Group policy templates updated to reflect SID or name support (Jakob Dahl).
+- Migrated from .NET Framework 4.5.2 to 4.8.
 
 ### Removed
 
-- Removed the Exit button from the UI.
-- Turned off automatic logging for service start and stop events.
+- Exit button from UI.
+- Automatic logging for service start and stop events.
 
 ### Fixed
 
-- Fixed an issue that would prevent syslogging from working if the syslog server was not in DNS.
-- Fixed an issue where the service would check the authorization of the wrong principal, in automatic-add scenarios. (Issue #50)
-- Fixed typos in French translation.
-- Added better error handling in the UI app if the service is not listening.
-
-
+- Syslog DNS resolution failure.
+- Authorization check using wrong principal in automatic-add scenarios (Issue #50).
+- Typos in French translation.
+- Improved error handling when service is not listening.
 
 ## [2.3-fr] - 2019-02-04
 
 ### Changed
 
-- Changed French localization from fr-CA to fr.
-
+- French localization changed from fr-CA to fr.
 
 ## [2.3] - 2019-01-31
 
 ### Added
 
-- Added localization for French. Initially, this was mistakenly coded as fr-CA, but it was later changed to fr. Big thanks to **Etienne Croteau**, both for translating the English strings into French and for nudging me into internationalization.
-- Added elements to the installer project so that the Make Me Admin service would be restarted
-upon first/second/third failure.
-- Added syslog functionality.
-- Changed the added user file to use encryption, to discourage tampering.
-- Specified a license of GPLv3.
-- Added the ability to automatically add certain users when they log on.
-- The UI now checks to see if the user is an administrator at all, instead of directly in the Administrators group, for the purposes of enabling "Grant Me Rights" button.
-- The application now supports names of users or groups, in addition to the previous option of SIDs.
+- French localization (Etienne Croteau).
+- Service failure recovery in installer (restart on first/second/third failure).
+- Syslog functionality.
+- Encrypted added user file.
+- GPLv3 license.
+- Automatic user add on logon.
+- Administrator group membership check in UI.
+- Name-based entity support (in addition to SIDs).
 
 ### Changed
 
-- Changed the path of the encrypted added user list from the CommonApplicationData folder to the user's Application Data folder. In this case, the user is the System account.
-- Updated code related to users whose rights do not expire.
-- Simplified logging code by removing separate Information, Warning and Error logging functions.
-- Changed the default timeout for admin rights to ten minutes, rather than two.
-- Slight change to the way membership in the local Administrators group is checked.
+- Encrypted user list moved from CommonApplicationData to SYSTEM account Application Data.
+- Updated non-expiring rights handling.
+- Simplified logging API.
+- Default admin rights timeout changed to 10 minutes.
+- Local Administrators group membership check updated.
 
 ### Fixed
 
-- Added explanatory text in the ADML file for the syslog server settings.
-
+- Added explanatory text in ADML for syslog settings.
 
 ## [2.2.1] - 2018-01-18
 
 ### Added
 
-- Added code to use the WCF security context to identify the user being added or removed from the
-Administrators group, rather than passing SIDs around as strings.
-- Added remote request application, to allow users to gain administrative rights on other devices. The
-feature includes its own separate allow/deny lists, a setting to permit remote requests, and a setting
-to end remote sessions on a device once that user's rights have expired.
+- WCF security context for user identity in add/remove operations.
+- Remote request application with separate allow/deny lists and session management.
 
 ### Changed
 
--  The list of SIDs that have been added to the local Administrators group is now encrypted. This is really
-just to prevent casual browsing of the list. It is not a secure list really, because the user gains
-administrator rights and can do whatever they want to the file, including delete it.
+- Added user SID list now encrypted.
 
 ### Removed
 
-- Removed Sinclair-specific user manuals.
-
+- Sinclair-specific user manuals.
 
 ## [2.1.3] - 2017-07-17
 
 ### Added
 
-- Added a setting to override the removal of admin rights by an outside process.
-- Added different user manuals for Windows 7, 8 and 10.
-- Added logic to the setup project to install the appropriate user manual based on operating system.
-- Added logging for the reason that administrator rights were removed (timeout, log off, etc.)
+- Override setting for external admin rights removal.
+- User manuals for Windows 7, 8, and 10.
+- Installer selects appropriate user manual by OS.
+- Admin rights removal reason logging (timeout, logoff, etc.).
 
 ### Deprecated
 
-- The user manuals are deprecated, as they are somewhat specific. They will likely be removed and posted to a company website.
-
+- User manuals (to be moved to company website).
 
 ## [2.1.0] - 2016-02-18
 
 ### Added
 
-- Added a setting to specify different rights timeouts for different users or groups.
-- Added a setting to remove administrative rights when the user logs out.
-- Added Group Policy templates (ADMX and ADML files) to control configuration settings.
-- Added the ability to specify settings as preferences (mutable) or via policy (immutable).
-- Added the user's name, if available, to the logging of additions to and removals from the Administrators group.
-- Added logic to the installer to remove the added users list upon uninstallation.
-- Added logic to the installer to remove the folder from Program Files upon uninstallation.
-- Added logging for the case where a user is removed from Administrators by a process other than Make Me Admin (Group Policy, for example).
-
-
-## 2015-11-20
-
-### Added
-
-- Modified the setup project to include the version number in the output MSI file name.
-- For debug builds, the word "Debug" is now added to the end of the Windows Installer file name.
-
-### Changed
-
-- Renamed the shortcut for the user manual to "Make Me Admin User Manual," instead of just "User Manual."
-
+- Per-user/group timeout overrides.
+- Remove admin rights on logout setting.
+- Group Policy templates (ADMX and ADML).
+- Policy vs. preference distinction for settings.
+- User name in add/remove event logs.
+- Installer removes added users list and Program Files folder on uninstall.
+- External admin rights removal logging (Group Policy, etc.).
 
 ## [2.0.0] - 2015-03-17
 
-Initial commit to GitHub. Prior to this commit, Make Me Admin was a semi-private project at Sinclair Community College. The code was briefly available via Sinclair's public Bitbucket server, but no installers were available.
+Initial public commit to GitHub. Previously a private project at Sinclair Community College.
 
+---
 
-<!---
-[unreleased]: https://github.com/pseymour/MakeMeAdmin/compare/v1.1.1...HEAD
-[1.1.1]: https://github.com/pseymour/MakeMeAdmin/compare/v1.1.0...v1.1.1
-[1.1.0]: https://github.com/pseymour/MakeMeAdmin/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/pseymour/MakeMeAdmin/compare/v0.3.0...v1.0.0
-[0.3.0]: https://github.com/pseymour/MakeMeAdmin/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/pseymour/MakeMeAdmin/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/pseymour/MakeMeAdmin/compare/v0.0.8...v0.1.0
-[0.0.8]: https://github.com/pseymour/MakeMeAdmin/compare/v0.0.7...v0.0.8
-[0.0.7]: https://github.com/pseymour/MakeMeAdmin/compare/v0.0.6...v0.0.7
-[0.0.6]: https://github.com/pseymour/MakeMeAdmin/compare/v0.0.5...v0.0.6
-[0.0.5]: https://github.com/pseymour/MakeMeAdmin/compare/v0.0.4...v0.0.5
-[0.0.4]: https://github.com/pseymour/MakeMeAdmin/compare/v0.0.3...v0.0.4
-[0.0.3]: https://github.com/pseymour/MakeMeAdmin/compare/v0.0.2...v0.0.3
-[0.0.2]: https://github.com/pseymour/MakeMeAdmin/compare/v0.0.1...v0.0.2
-[0.0.1]: https://github.com/pseymour/MakeMeAdmin/releases/tag/v0.0.1
---->
-
-<!---
-
-## [x.y] - 20yy-mm-dd
-
-### Added - for new features.
-
-- 
-
-### Changed - for changes in existing functionality.
-
-- 
-
-### Deprecated - for soon-to-be removed features.
-
-- 
-
-### Removed - for now removed features.
-
-- 
-
-### Fixed - for any bug fixes.
-
-- 
-
-### Security - in case of vulnerabilities.
-
-- 
-
---->
+## [Unreleased]
