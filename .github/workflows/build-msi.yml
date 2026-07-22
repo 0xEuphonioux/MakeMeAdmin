@@ -59,34 +59,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v2.5.0
-          name: v2.5.0
           files: Installers/**/*.msi
           prerelease: false
           make_latest: true
-          body: |
-            ## v2.5.0
-
-            ### Authentication and Identity
-            - Windows Hello support -- PIN, fingerprint, or facial recognition
-            - Entra ID / hybrid-join detection
-            - UPN normalization for hybrid-joined devices
-            - SID-to-name resolution with 5-tier fallback, including Entra ID IdentityStore cache lookup
-            - Unified single-line syslog format with structured `SID=` field for SIEM integration
-
-            ### Security Fixes
-            - Default-deny policy for remote administration; explicit allow-list required
-            - Authentication required by default for all privilege elevations
-            - DPAPI encryption hardened with `CurrentUser` scope and entropy salt
-            - WCF transport upgraded to `TransportWithMessageCredential`
-            - Unused BinaryFormatter import removed
-            - Restrictive ACL applied to user data file
-
-            ### Operations
-            - Syslog forwarding for all elevation and process events
-            - Credential data excluded from all log output
-            - GitHub Actions CI/CD for automated MSI builds
-            - MSI `DisplayVersion` correctly reflects installed version
-
-            See [CHANGELOG.md](https://github.com/0xEuphonioux/MakeMeAdmin/blob/master/CHANGELOG.md) for the full version history.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
