@@ -6,9 +6,6 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   build:
     runs-on: windows-latest
@@ -53,14 +50,3 @@ jobs:
         with:
           name: MakeMeAdmin-Installer
           path: Installers/**/*.msi
-
-      - name: Update Release
-        if: success()
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v2.5.0
-          files: Installers/**/*.msi
-          prerelease: false
-          make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
