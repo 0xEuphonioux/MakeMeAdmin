@@ -310,6 +310,12 @@ namespace SinclairCC.MakeMeAdmin
             int overrideMinutes = int.MinValue;
             int timeoutMinutes = Settings.AdminRightsTimeout;
 
+            if ((userIdentity == null) || (userIdentity.User == null))
+            { // No identity to look up (e.g. an expired user with no active
+              // session). Use the configured default timeout.
+                return timeoutMinutes;
+            }
+
             if (overrides.ContainsKey(userIdentity.User.Value))
             {
                 overrideMinutes = int.MinValue;
@@ -319,14 +325,17 @@ namespace SinclairCC.MakeMeAdmin
                 }
             }
 
-            foreach (SecurityIdentifier sid in userIdentity.Groups)
+            if (userIdentity.Groups != null)
             {
-                if (overrides.ContainsKey(sid.Value))
+                foreach (SecurityIdentifier sid in userIdentity.Groups)
                 {
-                    overrideMinutes = int.MinValue;
-                    if (int.TryParse(overrides[sid.Value], out overrideMinutes))
+                    if (overrides.ContainsKey(sid.Value))
                     {
-                        timeoutMinutes = Math.Max(timeoutMinutes, overrideMinutes);
+                        overrideMinutes = int.MinValue;
+                        if (int.TryParse(overrides[sid.Value], out overrideMinutes))
+                        {
+                            timeoutMinutes = Math.Max(timeoutMinutes, overrideMinutes);
+                        }
                     }
                 }
             }
