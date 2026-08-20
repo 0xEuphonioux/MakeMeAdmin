@@ -44,7 +44,12 @@ namespace SinclairCC.MakeMeAdmin
         {
             get
             {
-                return string.Format("net.tcp://{0}:{1}/MakeMeAdmin/Service", FullyQualifiedHostName, Settings.TCPServicePort);
+                int port = Settings.TCPServicePort;
+                if ((port < 1) || (port > 65535))
+                { // A malformed registry value must not produce an invalid URI.
+                    port = 808;
+                }
+                return string.Format("net.tcp://{0}:{1}/MakeMeAdmin/Service", FullyQualifiedHostName, port);
             }
         }
 
@@ -654,7 +659,15 @@ namespace SinclairCC.MakeMeAdmin
             {
 
                 int? policySetting = GetDWord(PolicyRegistryKeyPath, null, "Allow Free Text Reason");
+                if (!policySetting.HasValue)
+                { // Accept the legacy value name written by the ADMX template ("Allow Free Form Reason").
+                    policySetting = GetDWord(PolicyRegistryKeyPath, null, "Allow Free Form Reason");
+                }
                 int? preferenceSetting = GetDWord(PreferenceRegistryKeyPath, null, "Allow Free Text Reason");
+                if (!preferenceSetting.HasValue)
+                { // Accept the legacy value name written by the ADMX template ("Allow Free Form Reason").
+                    preferenceSetting = GetDWord(PreferenceRegistryKeyPath, null, "Allow Free Form Reason");
+                }
                 if (policySetting.HasValue)
                 { // The policy setting has a value. Go with whatever it says.
                     return Convert.ToBoolean(policySetting.Value);
@@ -1042,10 +1055,33 @@ namespace SinclairCC.MakeMeAdmin
             RegistryKey settingsKey = rootRegistryKey.OpenSubKey(keyPath, RegistryKeyPermissionCheck.ReadSubTree, rights);
             if (settingsKey != null)
             {
-                object regValue = settingsKey.GetValue(valueName);
+                object regValue = settingsKey.GetValue(valueName, null);
                 if (regValue != null)
                 {
-                    returnValue = Convert.ToInt32(regValue);
+                    if (regValue.GetType() == typeof(int))
+                    { // The value is a proper REG_DWORD.
+                        returnValue = (int)regValue;
+                    }
+                    else if (regValue.GetType() == typeof(long))
+                    { // The value is a REG_QWORD. Honor it only when it fits in a 32-bit integer.
+                        long qwordValue = (long)regValue;
+                        if ((qwordValue >= int.MinValue) && (qwordValue <= int.MaxValue))
+                        {
+                            returnValue = (int)qwordValue;
+                        }
+                    }
+                    else
+                    {
+                        string stringValue = regValue as string;
+                        if (stringValue != null)
+                        { // A REG_SZ value (e.g. written via regedit or GPP). Parse it as an integer.
+                            int parsedValue;
+                            if (int.TryParse(stringValue, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out parsedValue))
+                            {
+                                returnValue = parsedValue;
+                            }
+                        }
+                    }
                 }
 
                 settingsKey.Close();

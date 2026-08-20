@@ -68,13 +68,13 @@ namespace LsaLogonSessions
         internal static extern int WTSEnumerateSessions(System.IntPtr serverHandle, [MarshalAs(UnmanagedType.U4)] int reserved, [MarshalAs(UnmanagedType.U4)] int version, ref IntPtr sessionInfoPointer, [MarshalAs(UnmanagedType.U4)] ref int count);
 
 
-        [DllImport("wtsapi32.dll", SetLastError = true)]
+        [DllImport("wtsapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern int WTSSendMessage(
           IntPtr hServer,
           [MarshalAs(UnmanagedType.U4)] int SessionId,
-          /* [MarshalAs(UnmanagedType.LPWStr)] */ string Title,
+          string Title,
           [MarshalAs(UnmanagedType.U4)] int TitleLength,
-          /* [MarshalAs(UnmanagedType.LPWStr)] */ string Message,
+          string Message,
           [MarshalAs(UnmanagedType.U4)] int MessageLength,
           [MarshalAs(UnmanagedType.U4)] int Style,
           [MarshalAs(UnmanagedType.U4)] int Timeout,

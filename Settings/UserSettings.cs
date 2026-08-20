@@ -139,7 +139,19 @@ namespace SinclairCC.MakeMeAdmin
                 object regValue = settingsKey.GetValue(valueName, null);
                 if (regValue != null)
                 {
-                    returnValue = (string[])regValue;
+                    string[] multiStringValue = regValue as string[];
+                    if (multiStringValue != null)
+                    { // The value is a proper multi-string.
+                        returnValue = multiStringValue;
+                    }
+                    else
+                    {
+                        string singleStringValue = regValue as string;
+                        if (singleStringValue != null)
+                        { // A single REG_SZ value (e.g. written via regedit or GPP). Treat it as a one-entry list.
+                            returnValue = new string[] { singleStringValue };
+                        }
+                    }
                 }
 
                 settingsKey.Close();
