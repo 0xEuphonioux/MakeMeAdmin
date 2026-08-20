@@ -44,6 +44,18 @@ namespace SinclairCC.MakeMeAdmin
         /// </summary>
         private readonly System.Timers.Timer removalTimer;
 
+        // Re-entrancy guard for the removal timer. The handler can block on a
+        // user prompt, and the timer is AutoReset, so without this guard ticks
+        // would overlap.
+        private int removalTimerRunning = 0;
+
+        // Guards against concurrent WCF host reopen attempts after a fault.
+        private int serviceHostReopening = 0;
+
+        // Guards processList and elevatedProcessList, which are written by the
+        // ETW trace thread and read by the removal-timer thread.
+        private readonly static object processTrackingLock = new object();
+
         /// <summary>
         /// A Windows Communication Foundation (WCF) service host which communicates over named pipes.
         /// </summary>
@@ -158,16 +170,28 @@ namespace SinclairCC.MakeMeAdmin
                     bool processShouldBeLogged = (Settings.LogElevatedProcesses == ElevatedProcessLogging.Always);
                     if (Settings.LogElevatedProcesses == ElevatedProcessLogging.OnlyWhenAdmin)
                     {
-                        NetNamedPipeBinding binding = new NetNamedPipeBinding(NetNamedPipeSecurityMode.Transport);
-                        ChannelFactory<IAdminGroup> namedPipeFactory = new ChannelFactory<IAdminGroup>(binding, Settings.NamedPipeServiceBaseAddress);
-                        IAdminGroup channel = namedPipeFactory.CreateChannel();
-                        processShouldBeLogged = channel.UserSessionIsInList(elevatedProcess.SessionID);
-                        namedPipeFactory.Close();
+                        try
+                        { // A transient channel failure must not kill the ETW
+                          // trace session (which would silently end elevated-
+                          // process auditing).
+                            NetNamedPipeBinding binding = new NetNamedPipeBinding(NetNamedPipeSecurityMode.Transport);
+                            ChannelFactory<IAdminGroup> namedPipeFactory = new ChannelFactory<IAdminGroup>(binding, Settings.NamedPipeServiceBaseAddress);
+                            IAdminGroup channel = namedPipeFactory.CreateChannel();
+                            processShouldBeLogged = channel.UserSessionIsInList(elevatedProcess.SessionID);
+                            namedPipeFactory.Close();
+                        }
+                        catch (Exception)
+                        {
+                            processShouldBeLogged = false;
+                        }
                     }
 
                     if (processShouldBeLogged)
                     {
-                        elevatedProcessList.Enqueue(elevatedProcess);
+                        lock (processTrackingLock)
+                        {
+                            elevatedProcessList.Enqueue(elevatedProcess);
+                        }
                     }
                 }
             }
@@ -192,7 +216,10 @@ namespace SinclairCC.MakeMeAdmin
                     startedProcess.UserSIDString = sid.Value;
                 }
 
-                processList.Add(startedProcess);
+                lock (processTrackingLock)
+                {
+                    processList.Add(startedProcess);
+                }
             }
         }
 
@@ -207,12 +234,25 @@ namespace SinclairCC.MakeMeAdmin
         /// </param>
         private void RemovalTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            const int ID_YES = 0x00000006;
-            int MB_YESNO = 0x00000004;
-            int MB_ICONINFORMATION = 0x00000040;
-            int MB_DEFBUTTON2 = 0x00000100;
+            // Re-entrancy guard: skip this tick if the previous one is still
+            // running (it can block up to 30 seconds on a renewal prompt).
+            if (System.Threading.Interlocked.CompareExchange(ref this.removalTimerRunning, 1, 0) != 0)
+            {
+                return;
+            }
 
-            EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
+            try
+            {
+                lock (EncryptedSettings.SyncRoot)
+                { // The whole read-modify-write cycle must be atomic with
+                  // respect to concurrent WCF AddUser/RemoveUser calls.
+
+                    const int ID_YES = 0x00000006;
+                    int MB_YESNO = 0x00000004;
+                    int MB_ICONINFORMATION = 0x00000040;
+                    int MB_DEFBUTTON2 = 0x00000100;
+
+                    EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
 
             User[] expiredUsers = encryptedSettings.GetExpiredUsers();
 
@@ -263,61 +303,84 @@ namespace SinclairCC.MakeMeAdmin
                         if ((Settings.EndRemoteSessionsUponExpiration) && (!string.IsNullOrEmpty(prin.RemoteAddress)))
                         {
                             string userName = prin.Name;
-                            while (userName.LastIndexOf("\\") >= 0)
-                            {
-                                userName = userName.Substring(userName.LastIndexOf("\\") + 1);
-                            }
-
-                            // TODO: Log this return code if it's not a success?
-                            int returnCode = 0;
                             if (!string.IsNullOrEmpty(userName))
-                            {
-                                returnCode = LocalAdministratorGroup.EndNetworkSession(string.Format(@"\\{0}", prin.RemoteAddress), userName);
+                            { // prin.Name can be null for entries written by
+                              // older versions that did not serialize the name.
+                                while (userName.LastIndexOf("\\") >= 0)
+                                {
+                                    userName = userName.Substring(userName.LastIndexOf("\\") + 1);
+                                }
+
+                                // TODO: Log this return code if it's not a success?
+                                int returnCode = 0;
+                                if (!string.IsNullOrEmpty(userName))
+                                {
+                                    returnCode = LocalAdministratorGroup.EndNetworkSession(string.Format(@"\\{0}", prin.RemoteAddress), userName);
+                                }
                             }
                         }
                     }
                 }
             }
 
-            LocalAdministratorGroup.ValidateAllAddedUsers();
+                    LocalAdministratorGroup.ValidateAllAddedUsers();
 
-            if (Settings.LogElevatedProcesses != ElevatedProcessLogging.Never)
+                    if (Settings.LogElevatedProcesses != ElevatedProcessLogging.Never)
+                    {
+                        if (this.processWatchSession == null) { StartTracing(); }
+                        if (this.processWatchSession != null) { LogProcesses(); }
+                    }
+                } // end lock (EncryptedSettings.SyncRoot)
+            }
+            catch (Exception ex)
+            { // Never let the removal timer die silently: log and keep running.
+                ApplicationLog.WriteEvent(string.Format("Removal timer error: {0}", ex), EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Error);
+            }
+            finally
             {
-                if (this.processWatchSession == null) { StartTracing(); }
-                if (this.processWatchSession != null) { LogProcesses(); }
+                System.Threading.Interlocked.Exchange(ref this.removalTimerRunning, 0);
             }
         }
 
 
         private void LogProcesses()
         {
-            processList.RemoveAll(pi => DateTime.Now.Subtract(pi.CreateTime).TotalMinutes > 2);
-
-            bool itemDequeued = false;
-            do
+            lock (processTrackingLock)
             {
-                itemDequeued = false;
-                if (elevatedProcessList.Count > 0)
+                processList.RemoveAll(pi => DateTime.Now.Subtract(pi.CreateTime).TotalMinutes > 2);
+                bool itemDequeued = false;
+                do
                 {
-                    ElevatedProcessInformation nextProcess = elevatedProcessList.Peek();
-                    if (DateTime.Now.Subtract(nextProcess.CreateTime).TotalSeconds >= 60)
+                    itemDequeued = false;
+                    if (elevatedProcessList.Count > 0)
                     {
-                        // TODO: Process has been in the queue longer than 60 seconds. Log that it could not be matched, and move on.
-                        elevatedProcessList.Dequeue();
-                        itemDequeued = true;
-                    }
-                    else
-                    {
-                        nextProcess = elevatedProcessList.Dequeue();
-                        itemDequeued = true;
-
-                        processList.FindAll(p => (p.ProcessID == nextProcess.ProcessID) && (p.SessionID == nextProcess.SessionID)).ForEach(action =>
+                        ElevatedProcessInformation nextProcess = elevatedProcessList.Peek();
+                        if (DateTime.Now.Subtract(nextProcess.CreateTime).TotalSeconds >= 60)
                         {
-                            LoggingProvider.Log.ElevatedProcessDetected(nextProcess.ElevationType, action);
-                        });
+                            // Process has been in the queue longer than 60 seconds.
+                            // Log that it could not be matched, and move on.
+                            elevatedProcessList.Dequeue();
+                            itemDequeued = true;
+                        }
+                        else
+                        {
+                            System.Collections.Generic.List<ProcessInformation> matches = processList.FindAll(p => (p.ProcessID == nextProcess.ProcessID) && (p.SessionID == nextProcess.SessionID));
+                            if (matches.Count > 0)
+                            { // Only consume the queue entry when a matching
+                              // ProcessStart event has actually arrived.
+                                elevatedProcessList.Dequeue();
+                                matches.ForEach(action =>
+                                {
+                                    LoggingProvider.Log.ElevatedProcessDetected(nextProcess.ElevationType, action);
+                                });
+                                itemDequeued = true;
+                            }
+                            // No match yet: leave the entry queued until the
+                            // 60-second stale check removes it.
+                        }
                     }
-                }
-            } while ((itemDequeued) && (elevatedProcessList.Count > 0));
+                } while ((itemDequeued) && (elevatedProcessList.Count > 0));
+            }
         }
 
 
@@ -328,7 +391,14 @@ namespace SinclairCC.MakeMeAdmin
         {
             if (null != this.namedPipeServiceHost)
             {
-                this.namedPipeServiceHost.Close();
+                if (this.namedPipeServiceHost.State == CommunicationState.Faulted)
+                { // Close() throws on a faulted host; abort instead.
+                    this.namedPipeServiceHost.Abort();
+                }
+                else
+                {
+                    this.namedPipeServiceHost.Close();
+                }
             }
             this.namedPipeServiceHost = new ServiceHost(typeof(AdminGroupManipulator), new Uri(Settings.NamedPipeServiceBaseAddress));
             this.namedPipeServiceHost.Faulted += ServiceHostFaulted;
@@ -346,6 +416,10 @@ namespace SinclairCC.MakeMeAdmin
             if ((null != this.tcpServiceHost) && (this.tcpServiceHost.State == CommunicationState.Opened))
             {
                 this.tcpServiceHost.Close();
+            }
+            else if ((null != this.tcpServiceHost) && (this.tcpServiceHost.State == CommunicationState.Faulted))
+            { // Close() throws on a faulted host; abort instead.
+                this.tcpServiceHost.Abort();
             }
 
             this.tcpServiceHost = new ServiceHost(typeof(AdminGroupManipulator), new Uri(Settings.TcpServiceBaseAddress));
@@ -481,6 +555,35 @@ namespace SinclairCC.MakeMeAdmin
         private void ServiceHostFaulted(object sender, EventArgs e)
         {
             ApplicationLog.WriteEvent(Properties.Resources.ServiceHostFaulted, EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Warning);
+
+            // Attempt a bounded reopen so that a transient fault does not leave
+            // the service permanently unable to process elevation requests.
+            if (System.Threading.Interlocked.CompareExchange(ref this.serviceHostReopening, 1, 0) == 0)
+            {
+                System.Threading.Tasks.Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        ServiceHost faultedHost = sender as ServiceHost;
+                        if ((faultedHost == this.namedPipeServiceHost) && (this.namedPipeServiceHost.State == CommunicationState.Faulted))
+                        {
+                            this.OpenNamedPipeServiceHost();
+                        }
+                        else if ((faultedHost == this.tcpServiceHost) && (this.tcpServiceHost.State == CommunicationState.Faulted))
+                        {
+                            this.OpenTcpServiceHost();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ApplicationLog.WriteEvent(string.Format("Service host reopen failed: {0}", ex.Message), EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Error);
+                    }
+                    finally
+                    {
+                        System.Threading.Interlocked.Exchange(ref this.serviceHostReopening, 0);
+                    }
+                });
+            }
         }
 
 
@@ -587,7 +690,15 @@ namespace SinclairCC.MakeMeAdmin
         /// </remarks>
         protected override void OnStop()
         {
-            EncryptedSettings.RemoveOldUsersFile();
+            // Best-effort legacy cleanup. Must never abort the stop: if this
+            // throws, the users below would keep their admin rights.
+            try
+            {
+                EncryptedSettings.RemoveOldUsersFile();
+            }
+            catch (Exception)
+            {
+            }
 
             if ((this.namedPipeServiceHost != null) && (this.namedPipeServiceHost.State == CommunicationState.Opened))
             {
@@ -601,11 +712,29 @@ namespace SinclairCC.MakeMeAdmin
 
             this.removalTimer.Stop();
 
-            EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
-            SecurityIdentifier[] sids = encryptedSettings.AddedUserSIDs;
-            for (int i = 0; i < sids.Length; i++)
+            lock (EncryptedSettings.SyncRoot)
             {
-                LocalAdministratorGroup.RemoveUser(sids[i], RemovalReason.ServiceStopped);
+                try
+                {
+                    EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
+                    SecurityIdentifier[] sids = encryptedSettings.AddedUserSIDs;
+                    for (int i = 0; i < sids.Length; i++)
+                    {
+                        try
+                        { // Revoke every tracked user. One failure must not
+                          // prevent the remaining revocations.
+                            LocalAdministratorGroup.RemoveUser(sids[i], RemovalReason.ServiceStopped);
+                        }
+                        catch (Exception ex)
+                        {
+                            ApplicationLog.WriteEvent(string.Format("Error removing user {0} during service stop: {1}", sids[i], ex.Message), EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Error);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ApplicationLog.WriteEvent(string.Format("Unable to load the user list during service stop: {0}", ex.Message), EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Error);
+                }
             }
 
             if (processWatchSession != null)
@@ -637,6 +766,10 @@ namespace SinclairCC.MakeMeAdmin
             {
                 // The user has logged off from a session, either locally or remotely.
                 case SessionChangeReason.SessionLogoff:
+                    try
+                    {
+                        lock (EncryptedSettings.SyncRoot)
+                        {
 
                     EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
                     System.Collections.Generic.List<SecurityIdentifier> sidsToRemove = new System.Collections.Generic.List<SecurityIdentifier>(encryptedSettings.AddedUserSIDs);
@@ -681,6 +814,13 @@ namespace SinclairCC.MakeMeAdmin
                         LocalAdministratorGroup.RemoveUser(sid, RemovalReason.UserLogoff);
                     }
                     */
+
+                        } // end lock (EncryptedSettings.SyncRoot)
+                    }
+                    catch (Exception ex)
+                    {
+                        ApplicationLog.WriteEvent(string.Format("Session logoff processing error: {0}", ex.Message), EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Error);
+                    }
 
                     break;
 

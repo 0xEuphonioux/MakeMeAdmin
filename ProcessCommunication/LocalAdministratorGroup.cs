@@ -183,6 +183,11 @@ namespace SinclairCC.MakeMeAdmin
         {
             // TODO: Only do this if the user is not a member of the group?
 
+            // Sanitize the reason server-side: it flows into the Event Log and
+            // syslog, so control characters would permit log injection, and an
+            // oversized reason would bloat log entries.
+            reason = SanitizeReason(reason);
+
             AdminGroupManipulator adminGroupManipulator = new AdminGroupManipulator();
             bool userIsAuthorized = adminGroupManipulator.UserIsAuthorized(userIdentity, Settings.LocalAllowedEntities, Settings.LocalDeniedEntities, "Local allowed");
 
@@ -198,11 +203,19 @@ namespace SinclairCC.MakeMeAdmin
                 (userIsAuthorized)
                )
             {
-                // Save the user's information to the list of users.
-                EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
-                encryptedSettings.AddUser(userIdentity, expirationTime, remoteAddress);
+                lock (EncryptedSettings.SyncRoot)
+                { // Serialize the whole persist-and-add sequence so the removal
+                  // timer cannot observe a user in one state but not the other.
 
-                AddUserToAdministrators(userIdentity.User, reason, userIdentity.Name);
+                    // Save the user's information to the list of users.
+                    EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
+                    encryptedSettings.AddUser(userIdentity, expirationTime, remoteAddress);
+
+                    if (!AddUserToAdministrators(userIdentity.User, reason, userIdentity.Name))
+                    { // The group add failed. Do not leave an untracked list entry behind.
+                        encryptedSettings.RemoveUser(userIdentity.User);
+                    }
+                }
             }
             else
             {
@@ -250,6 +263,39 @@ namespace SinclairCC.MakeMeAdmin
         }
 
         /// <summary>
+        /// Strips control characters from a user-supplied reason and truncates
+        /// it to the configured maximum length, so it is safe to embed in
+        /// Event Log and syslog entries.
+        /// </summary>
+        private static string SanitizeReason(string reason)
+        {
+            if (string.IsNullOrEmpty(reason))
+            {
+                return reason;
+            }
+
+            int maxLength = Settings.MaximumReasonLength;
+            if (maxLength < 1)
+            {
+                maxLength = 256;
+            }
+
+            System.Text.StringBuilder builder = new System.Text.StringBuilder(reason.Length);
+            foreach (char c in reason)
+            {
+                if ((c == '\t') || (!char.IsControl(c)))
+                {
+                    builder.Append(c);
+                    if (builder.Length >= maxLength)
+                    {
+                        break;
+                    }
+                }
+            }
+            return builder.ToString();
+        }
+
+        /// <summary>
         /// Removes the given security identifier (SID) from the local Administrators group.
         /// </summary>
         /// <param name="userSid">
@@ -266,6 +312,11 @@ namespace SinclairCC.MakeMeAdmin
             {
                 SecurityIdentifier[] localAdminSids = GetLocalGroupMembers(LocalAdminGroupName);
 
+                if (localAdminSids == null)
+                { // The group could not be enumerated. Do not attempt removal.
+                    return;
+                }
+
                 foreach (SecurityIdentifier sid in localAdminSids)
                 {
                     if (sid == userSid)
@@ -274,8 +325,13 @@ namespace SinclairCC.MakeMeAdmin
                         int result = RemoveLocalGroupMembers(LocalAdminGroupName, userSid);
                         if (result == 0)
                         {
-                            EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
-                            encryptedSettings.RemoveUser(userSid);
+                            lock (EncryptedSettings.SyncRoot)
+                            { // Hold the lock for the list update only; the
+                              // message/logoff work below runs outside it.
+
+                                EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
+                                encryptedSettings.RemoveUser(userSid);
+                            }
 
                             string reasonString = Properties.Resources.RemovalReasonUnknown;
                             switch (reason)
@@ -335,8 +391,14 @@ namespace SinclairCC.MakeMeAdmin
                                         messageBuilder.AppendLine(Settings.LogOffMessage[i]);
                                     }
                                 }
-                                int returnValue = LsaLogonSessions.LogonSessions.SendMessageToSession(sendToSessionId, messageBuilder.ToString(), (MB_OK + MB_ICONWARNING), Settings.LogOffAfterExpiration, out response);
-                                returnValue = LsaLogonSessions.LogonSessions.LogoffSession(sendToSessionId);
+                                if (sendToSessionId != 0)
+                                { // Only message and log off the user's session
+                                  // when it was actually found; session 0 is the
+                                  // non-interactive services session and cannot
+                                  // be logged off.
+                                    int returnValue = LsaLogonSessions.LogonSessions.SendMessageToSession(sendToSessionId, messageBuilder.ToString(), (MB_OK + MB_ICONWARNING), Settings.LogOffAfterExpiration, out response);
+                                    returnValue = LsaLogonSessions.LogonSessions.LogoffSession(sendToSessionId);
+                                }
                             }
 
                         }
@@ -355,6 +417,10 @@ namespace SinclairCC.MakeMeAdmin
         /// </summary>
         public static void ValidateAllAddedUsers()
         {
+            lock (EncryptedSettings.SyncRoot)
+            { // Hold the user-list lock for the entire read-modify-write cycle
+              // so that concurrent AddUser/RemoveUser calls cannot be lost.
+
             // Get a list of the users stored in the on-disk list.
             EncryptedSettings encryptedSettings = new EncryptedSettings(EncryptedSettings.SettingsFilePath);
             SecurityIdentifier[] addedUserList = encryptedSettings.AddedUserSIDs;
@@ -509,6 +575,7 @@ namespace SinclairCC.MakeMeAdmin
                     }
                 }
             }
+            } // end lock (EncryptedSettings.SyncRoot)
         }
 
 
@@ -792,10 +859,16 @@ namespace SinclairCC.MakeMeAdmin
 
             bool isMember = false;
 
-            foreach (SecurityIdentifier sid in localAdminSids)
+            if (localAdminSids != null)
             {
-                isMember = sid.Equals(userIdentity.User);
-                if (isMember) { break; }
+                foreach (SecurityIdentifier sid in localAdminSids)
+                {
+                    if ((sid != null) && sid.Equals(userIdentity.User))
+                    {
+                        isMember = true;
+                        break;
+                    }
+                }
             }
 
             return isMember;
@@ -814,24 +887,35 @@ namespace SinclairCC.MakeMeAdmin
         /// </returns>
         public static bool IsMemberOfAdministrators(WindowsIdentity userIdentity)
         {
-            bool isMember = IsMemberOfAdministratorsDirectly(userIdentity);
+            bool isMember = false;
 
-            if (!isMember)
+            if (userIdentity != null)
             {
-                SecurityIdentifier[] localAdminSids = GetLocalGroupMembers(LocalAdminGroupName);
+                isMember = IsMemberOfAdministratorsDirectly(userIdentity);
 
-                // We can't use userIdentity.Groups here, because it does not include group memberships
-                // that are used for deny-only.
-                SecurityIdentifier[] groupSids = LsaLogonSessions.LogonSessions.GetGroupMemberships(userIdentity.Token);
-
-                foreach (SecurityIdentifier userGroupSid in groupSids)
+                if (!isMember)
                 {
-                    foreach (SecurityIdentifier adminSid in localAdminSids)
+                    SecurityIdentifier[] localAdminSids = GetLocalGroupMembers(LocalAdminGroupName);
+
+                    // We can't use userIdentity.Groups here, because it does not include group memberships
+                    // that are used for deny-only.
+                    SecurityIdentifier[] groupSids = LsaLogonSessions.LogonSessions.GetGroupMemberships(userIdentity.Token);
+
+                    if ((localAdminSids != null) && (groupSids != null))
                     {
-                        isMember |= adminSid.Equals(userGroupSid);
-                        if (isMember) { break; }
+                        foreach (SecurityIdentifier userGroupSid in groupSids)
+                        {
+                            foreach (SecurityIdentifier adminSid in localAdminSids)
+                            {
+                                if ((adminSid != null) && adminSid.Equals(userGroupSid))
+                                {
+                                    isMember = true;
+                                    break;
+                                }
+                            }
+                            if (isMember) { break; }
+                        }
                     }
-                    if (isMember) { break; }
                 }
             }
 

@@ -28,6 +28,14 @@ namespace SinclairCC.MakeMeAdmin
         /// The list of users that have been added to the
         /// local Administrators group.
         /// </summary>
+        /// <summary>
+        /// Synchronizes all access to the on-disk user list. Every caller that
+        /// performs a read-modify-write cycle (load, mutate, save) must hold this
+        /// lock so that concurrent access from the removal timer, the WCF hosts
+        /// and the session-change handler cannot tear the file or lose updates.
+        /// </summary>
+        public static readonly object SyncRoot = new object();
+
         [XmlArray("addedUsers")]
         [XmlArrayItem("user")]
         public UserList AddedUsers { get; set; }
@@ -310,64 +318,111 @@ namespace SinclairCC.MakeMeAdmin
         /// </param>
         private void Save(string filePath)
         {
-            try
+            lock (EncryptedSettings.SyncRoot)
             {
-                // Serialize the current object to a memory stream.
-                System.IO.MemoryStream plaintextStream = new System.IO.MemoryStream();
-                System.Xml.XmlTextWriter plaintextWriter = new System.Xml.XmlTextWriter(plaintextStream, System.Text.Encoding.Unicode);
-                XmlSerializer serializer = EncryptedSettings.Serializer;
-                lock (serializer)
-                {
-                    plaintextWriter.Indentation = 0;
-                    plaintextWriter.Formatting = System.Xml.Formatting.None;
-                    serializer.Serialize(plaintextWriter, this);
-                }
-
-                // Convert the plaintext memory stream to an array of bytes.
-                byte[] plaintextBytes = plaintextStream.ToArray();
-
-                // Encrypt the plaintext byte array with DPAPI (current user scope + entropy).
-                byte[] ciphertextBytes = ProtectedData.Protect(plaintextBytes, DpapiEntropy, DataProtectionScope.CurrentUser);
-
-                /*
-                string byteHashString = ComputeHash(ciphertextBytes);
-                */
-                plaintextWriter.Close();
-                plaintextWriter.Dispose();
-
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(filePath));
-
-                // Write the encrypted byte array to the file.
-                System.IO.FileStream ciphertextStream = new System.IO.FileStream(filePath, System.IO.FileMode.Create, System.IO.FileAccess.Write);
-                ciphertextStream.Write(ciphertextBytes, 0, ciphertextBytes.Length);
-                ciphertextStream.Close();
-
-                // Set restrictive ACL: only SYSTEM and Administrators can read the file.
                 try
                 {
-                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(filePath);
-                    FileSecurity security = fileInfo.GetAccessControl();
-                    security.SetAccessRuleProtection(true, false); // Remove inherited permissions
-                    security.AddAccessRule(new FileSystemAccessRule(
-                        new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
-                        FileSystemRights.FullControl,
-                        AccessControlType.Allow));
-                    security.AddAccessRule(new FileSystemAccessRule(
-                        new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
-                        FileSystemRights.FullControl,
-                        AccessControlType.Allow));
-                    fileInfo.SetAccessControl(security);
-                }
-                catch (Exception)
-                {
-                    // ACL setting is best-effort; don't fail the save if it errors.
-                }
-            }
-            catch (System.InvalidOperationException)
-            {
-                throw;
-            }
+                    // Serialize the current object to a memory stream.
+                    System.IO.MemoryStream plaintextStream = new System.IO.MemoryStream();
+                    System.Xml.XmlTextWriter plaintextWriter = new System.Xml.XmlTextWriter(plaintextStream, System.Text.Encoding.Unicode);
+                    XmlSerializer serializer = EncryptedSettings.Serializer;
+                    lock (serializer)
+                    {
+                        plaintextWriter.Indentation = 0;
+                        plaintextWriter.Formatting = System.Xml.Formatting.None;
+                        serializer.Serialize(plaintextWriter, this);
+                    }
 
+                    // Convert the plaintext memory stream to an array of bytes.
+                    byte[] plaintextBytes = plaintextStream.ToArray();
+
+                    // Encrypt the plaintext byte array with DPAPI (current user scope + entropy).
+                    byte[] ciphertextBytes = ProtectedData.Protect(plaintextBytes, DpapiEntropy, DataProtectionScope.CurrentUser);
+
+                    plaintextWriter.Close();
+                    plaintextWriter.Dispose();
+
+                    string directoryPath = System.IO.Path.GetDirectoryName(filePath);
+                    System.IO.Directory.CreateDirectory(directoryPath);
+
+                    // Harden the directory ACL so that standard users cannot create
+                    // files in it (e.g. a garbage users.xml that would disable the
+                    // revocation chain). Best-effort, like the file ACL below.
+                    try
+                    {
+                        System.IO.DirectoryInfo directoryInfo = new System.IO.DirectoryInfo(directoryPath);
+                        System.Security.AccessControl.DirectorySecurity directorySecurity = directoryInfo.GetAccessControl();
+                        directorySecurity.SetAccessRuleProtection(true, false); // Remove inherited permissions
+                        directorySecurity.AddAccessRule(new System.Security.AccessControl.FileSystemAccessRule(
+                            new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+                            System.Security.AccessControl.FileSystemRights.FullControl,
+                            System.Security.AccessControl.AccessControlType.Allow));
+                        directorySecurity.AddAccessRule(new System.Security.AccessControl.FileSystemAccessRule(
+                            new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+                            System.Security.AccessControl.FileSystemRights.FullControl,
+                            System.Security.AccessControl.AccessControlType.Allow));
+                        directoryInfo.SetAccessControl(directorySecurity);
+                    }
+                    catch (Exception)
+                    {
+                        // Directory ACL setting is best-effort; don't fail the save if it errors.
+                    }
+
+                    // Write atomically: serialize to a temporary file, then replace
+                    // the real file. A process crash mid-write leaves the previous
+                    // file intact instead of a truncated one.
+                    string tempFilePath = filePath + ".tmp";
+                    System.IO.FileStream ciphertextStream = new System.IO.FileStream(tempFilePath, System.IO.FileMode.Create, System.IO.FileAccess.Write);
+                    ciphertextStream.Write(ciphertextBytes, 0, ciphertextBytes.Length);
+                    ciphertextStream.Close();
+
+                    try
+                    {
+                        if (System.IO.File.Exists(filePath))
+                        {
+                            System.IO.File.Replace(tempFilePath, filePath, null);
+                        }
+                        else
+                        {
+                            System.IO.File.Move(tempFilePath, filePath);
+                        }
+                    }
+                    catch
+                    {
+                        if (System.IO.File.Exists(tempFilePath))
+                        {
+                            System.IO.File.Delete(tempFilePath);
+                        }
+                        throw;
+                    }
+
+                    // Set restrictive ACL: only SYSTEM and Administrators can read the file.
+                    try
+                    {
+                        System.IO.FileInfo fileInfo = new System.IO.FileInfo(filePath);
+                        FileSecurity security = fileInfo.GetAccessControl();
+                        security.SetAccessRuleProtection(true, false); // Remove inherited permissions
+                        security.AddAccessRule(new FileSystemAccessRule(
+                            new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+                            FileSystemRights.FullControl,
+                            AccessControlType.Allow));
+                        security.AddAccessRule(new FileSystemAccessRule(
+                            new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+                            FileSystemRights.FullControl,
+                            AccessControlType.Allow));
+                        fileInfo.SetAccessControl(security);
+                    }
+                    catch (Exception)
+                    {
+                        // ACL setting is best-effort; don't fail the save if it errors.
+                    }
+                }
+                catch (System.InvalidOperationException)
+                {
+                    throw;
+                }
+            }
+        }
             /*
             // This is the unencrypted version.
             try
@@ -389,7 +444,6 @@ namespace SinclairCC.MakeMeAdmin
                 throw;
             }
             */
-        }
 
 
         /// <summary>
@@ -400,68 +454,78 @@ namespace SinclairCC.MakeMeAdmin
         /// </param>
         private void Load(string filePath)
         {
-            if (System.IO.File.Exists(filePath))
-            { // The specified file exists.
-                byte[] buffer = new byte[128];
-                int bytesRead = int.MinValue;
+            lock (EncryptedSettings.SyncRoot)
+            {
+                if (System.IO.File.Exists(filePath))
+                { // The specified file exists.
+                    byte[] buffer = new byte[128];
+                    int bytesRead = int.MinValue;
 
-                // Read the encrypted bytes from the file.
-                System.IO.MemoryStream ciphertextMemoryStream = new System.IO.MemoryStream();
-                System.IO.FileStream ciphertextFileStream = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                while ((bytesRead = ciphertextFileStream.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    ciphertextMemoryStream.Write(buffer, 0, bytesRead);
+                    // Read the encrypted bytes from the file.
+                    System.IO.MemoryStream ciphertextMemoryStream = new System.IO.MemoryStream();
+                    System.IO.FileStream ciphertextFileStream = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                    while ((bytesRead = ciphertextFileStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        ciphertextMemoryStream.Write(buffer, 0, bytesRead);
+                    }
+                    ciphertextFileStream.Close();
+
+                    // Convert the encrypted bytes to an array.
+                    byte[] ciphertextBytes = ciphertextMemoryStream.ToArray();
+
+                    // Decrypt the byte array with DPAPI (current user scope + entropy).
+                    // Falls back to LocalMachine scope for compatibility with files created by older versions.
+                    byte[] plaintextBytes;
+                    try
+                    {
+                        plaintextBytes = System.Security.Cryptography.ProtectedData.Unprotect(ciphertextBytes, DpapiEntropy, DataProtectionScope.CurrentUser);
+                    }
+                    catch (System.Security.Cryptography.CryptographicException)
+                    {
+                        // Migration path: try old LocalMachine scope (no entropy) for existing files.
+                        plaintextBytes = System.Security.Cryptography.ProtectedData.Unprotect(ciphertextBytes, null, DataProtectionScope.LocalMachine);
+                    }
+
+                    ciphertextMemoryStream.Close();
+
+                    // Deserialize the plaintext byte array.
+                    EncryptedSettings deserializedSettings = null;
+                    System.IO.MemoryStream plaintextStream = new System.IO.MemoryStream(plaintextBytes);
+
+                    // Use a secure XML reader: prohibit DTD processing so that a
+                    // tampered (but decryptable) file cannot trigger entity
+                    // expansion.
+                    System.Xml.XmlReaderSettings readerSettings = new System.Xml.XmlReaderSettings();
+                    readerSettings.DtdProcessing = System.Xml.DtdProcessing.Prohibit;
+                    readerSettings.XmlResolver = null;
+                    System.Xml.XmlReader reader = System.Xml.XmlReader.Create(plaintextStream, readerSettings);
+                    XmlSerializer serializer = EncryptedSettings.Serializer;
+                    lock (serializer)
+                    {
+                        deserializedSettings = (EncryptedSettings)serializer.Deserialize(reader);
+                    }
+                    reader.Close();
+                    plaintextStream.Close();
+
+                    /*
+                    // This is the unencrypted version.
+                    EncryptedSettings deserializedSettings = null;
+                    System.Xml.XmlTextReader reader = new XmlTextReader(filePath);
+                    XmlSerializer serializer = EncryptedSettings.Serializer;
+                    lock (serializer)
+                    {
+                        deserializedSettings = (EncryptedSettings)serializer.Deserialize(reader);
+                    }
+                    reader.Close();
+                    */
+
+                    this.AddedUsers = deserializedSettings.AddedUsers;
                 }
-                ciphertextFileStream.Close();
-
-                // Convert the encrypted bytes to an array.
-                byte[] ciphertextBytes = ciphertextMemoryStream.ToArray();
-
-                // Decrypt the byte array with DPAPI (current user scope + entropy).
-                // Falls back to LocalMachine scope for compatibility with files created by older versions.
-                byte[] plaintextBytes;
-                try
-                {
-                    plaintextBytes = System.Security.Cryptography.ProtectedData.Unprotect(ciphertextBytes, DpapiEntropy, DataProtectionScope.CurrentUser);
+                else
+                { // The specified file does not exist. Save a new one.
+                    this.AddedUsers = new UserList();
+                    this.Save(filePath);
                 }
-                catch (System.Security.Cryptography.CryptographicException)
-                {
-                    // Migration path: try old LocalMachine scope (no entropy) for existing files.
-                    plaintextBytes = System.Security.Cryptography.ProtectedData.Unprotect(ciphertextBytes, null, DataProtectionScope.LocalMachine);
-                }
-
-                ciphertextMemoryStream.Close();
-
-                // Deserialize the plaintext byte array.
-                EncryptedSettings deserializedSettings = null;
-                System.IO.MemoryStream plaintextStream = new System.IO.MemoryStream(plaintextBytes);
-                System.Xml.XmlTextReader reader = new XmlTextReader(plaintextStream);
-                XmlSerializer serializer = EncryptedSettings.Serializer;
-                lock (serializer)
-                {
-                    deserializedSettings = (EncryptedSettings)serializer.Deserialize(reader);
-                }
-                reader.Close();
-                plaintextStream.Close();
-
-                /*
-                // This is the unencrypted version.
-                EncryptedSettings deserializedSettings = null;
-                System.Xml.XmlTextReader reader = new XmlTextReader(filePath);
-                XmlSerializer serializer = EncryptedSettings.Serializer;
-                lock (serializer)
-                {
-                    deserializedSettings = (EncryptedSettings)serializer.Deserialize(reader);
-                }
-                reader.Close();
-                */
-
-                this.AddedUsers = deserializedSettings.AddedUsers;
-            }
-            else
-            { // The specified file does not exist. Save a new one.
-                this.AddedUsers = new UserList();
-                this.Save(filePath);
             }
         }
 
