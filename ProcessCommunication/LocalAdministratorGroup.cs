@@ -184,11 +184,11 @@ namespace SinclairCC.MakeMeAdmin
             // TODO: Only do this if the user is not a member of the group?
 
             AdminGroupManipulator adminGroupManipulator = new AdminGroupManipulator();
-            bool userIsAuthorized = adminGroupManipulator.UserIsAuthorized(userIdentity, Settings.LocalAllowedEntities, Settings.LocalDeniedEntities);
+            bool userIsAuthorized = adminGroupManipulator.UserIsAuthorized(userIdentity, Settings.LocalAllowedEntities, Settings.LocalDeniedEntities, "Local allowed");
 
             if (!string.IsNullOrEmpty(remoteAddress))
             { // Request is from a remote computer. Check the remote authorization list.
-                userIsAuthorized &= adminGroupManipulator.UserIsAuthorized(userIdentity, Settings.RemoteAllowedEntities, Settings.RemoteDeniedEntities);
+                userIsAuthorized &= adminGroupManipulator.UserIsAuthorized(userIdentity, Settings.RemoteAllowedEntities, Settings.RemoteDeniedEntities, "Remote allowed");
             }
 
             if (
@@ -421,7 +421,7 @@ namespace SinclairCC.MakeMeAdmin
                             if (
                                 (Settings.AutomaticAddAllowed != null) &&
                                 (Settings.AutomaticAddAllowed.Length > 0) &&
-                                (adminGroup.UserIsAuthorized(userIdentity, Settings.AutomaticAddAllowed, Settings.AutomaticAddDenied))
+                                (adminGroup.UserIsAuthorized(userIdentity, Settings.AutomaticAddAllowed, Settings.AutomaticAddDenied, "Automatic add allowed"))
                                )
                             { // The user is an automatically-added user.
 
@@ -485,7 +485,7 @@ namespace SinclairCC.MakeMeAdmin
                             if (
                                 (Settings.AutomaticAddAllowed != null) &&
                                 (Settings.AutomaticAddAllowed.Length > 0) &&
-                                (adminGroup.UserIsAuthorized(userIdentity, Settings.AutomaticAddAllowed, Settings.AutomaticAddDenied))
+                                (adminGroup.UserIsAuthorized(userIdentity, Settings.AutomaticAddAllowed, Settings.AutomaticAddDenied, "Automatic add allowed"))
                                )
                             { // The user is an automatically-added user.
 

@@ -213,6 +213,33 @@ namespace SinclairCC.MakeMeAdmin
         /// </returns>
         public bool UserIsAuthorized(WindowsIdentity userIdentity, string[] allowedSidsList, string[] deniedSidsList)
         {
+            // This method is the WCF service contract implementation. The list label defaults
+            // to "Allowed" so the logged messages remain stable for callers that do not
+            // identify the list (e.g. the remote client pre-check over the channel).
+            return UserIsAuthorized(userIdentity, allowedSidsList, deniedSidsList, "Allowed");
+        }
+
+        /// <summary>
+        /// Determines whether the given user is authorized to obtain administrator rights.
+        /// </summary>
+        /// <param name="userIdentity">
+        /// An identity object representing the user whose authorization is to be checked.
+        /// </param>
+        /// <param name="allowedSidsList">
+        /// The list of allowed SIDs and principal names against which the user's identity is checked.
+        /// </param>
+        /// <param name="deniedSidsList">
+        /// The list of denied SIDs and principal names against which the user's identity is checked.
+        /// </param>
+        /// <param name="listDescription">
+        /// A human-readable description of the authorization list being checked (e.g. "Local allowed",
+        /// "Remote allowed"). Included in logged messages so failures identify which list was missing.
+        /// </param>
+        /// <returns>
+        /// Returns true if the user is authorized to obtain administrator rights.
+        /// </returns>
+        internal bool UserIsAuthorized(WindowsIdentity userIdentity, string[] allowedSidsList, string[] deniedSidsList, string listDescription)
+        {
             /*
             WindowsIdentity userIdentity = null;
 
@@ -238,13 +265,18 @@ namespace SinclairCC.MakeMeAdmin
 
             // Check the authorization list.
             if (allowedSidsList == null)
-            { // The allowed list is null. Require explicit configuration — do NOT default to allow-all.
-                ApplicationLog.WriteEvent("Allowed entities list is null. Authorization denied — explicit configuration required.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Warning);
+            { // The allowed list is null. Require explicit configuration - do NOT default to allow-all.
+                ApplicationLog.WriteEvent(
+                    string.Format("{0} entities list is null. Authorization denied. Explicit configuration required. Check registry: HKLM\\{1} (policy) or HKLM\\{2} (preference).",
+                    listDescription, Settings.PolicyRegistryKeyPath, Settings.PreferenceRegistryKeyPath),
+                    EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Warning);
                 return false;
             }
             else if (allowedSidsList.Length == 0)
             { // The allowed list is empty, meaning no one is allowed administrator rights.
-                ApplicationLog.WriteEvent("Allowed entities list is empty. Authorization denied.", EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
+                ApplicationLog.WriteEvent(
+                    string.Format("{0} entities list is empty. Authorization denied.", listDescription),
+                    EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Information);
                 return false;
             }
             else
