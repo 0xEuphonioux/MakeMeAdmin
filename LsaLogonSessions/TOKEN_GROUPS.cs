@@ -32,10 +32,11 @@ namespace LsaLogonSessions
         /// </summary>
         public uint GroupCount;
 
-        /// <summary>
-        /// An array of SID_AND_ATTRIBUTES structures that contain a set of SIDs and corresponding attributes.
-        /// </summary>
-        [MarshalAs(UnmanagedType.ByValArray)]
-        public SID_AND_ATTRIBUTES[] Groups;
+        // NOTE: The native TOKEN_GROUPS layout is GroupCount followed by an
+        // inline array of SID_AND_ATTRIBUTES structures. The array is NOT
+        // declared here: a ByValArray marshaling attribute without SizeConst
+        // makes Marshal.PtrToStructure/Marshal.SizeOf throw an ArgumentException
+        // on every call. LogonSessions.GetGroupMemberships walks the array
+        // manually from the buffer, so the field is unnecessary.
     }
 }

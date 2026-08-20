@@ -120,15 +120,19 @@ namespace SinclairCC.MakeMeAdmin
         }
 
         /// <summary>
-        /// Gets the name of the user (e.g., DOMAIN\UserName).
+        /// Gets or sets the name of the user (e.g., DOMAIN\UserName).
         /// </summary>
         /// <remarks>
-        /// This value is not serialized, because it is unnecessary.
+        /// This value is serialized so that it survives a restart of the
+        /// service. Without it, the removal timer cannot determine the SAM
+        /// name of an expired remote user and crashes with a null reference
+        /// while ending the remote session.
         /// </remarks>
-        [XmlIgnore]
+        [XmlAttribute("name")]
         public string Name
         {
             get { return this.userName; }
+            set { this.userName = value; }
         }
 
         [XmlElement(ElementName = "renewalsUsed")]

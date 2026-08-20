@@ -53,15 +53,20 @@ namespace LsaLogonSessions
             SecurityIdentifier returnSid = null;
             IntPtr tokenPointer = IntPtr.Zero;
             int returnValue = NativeMethods.WTSQueryUserToken(sessionId, out tokenPointer);
-            int lastWin32Error = Marshal.GetLastWin32Error();
             if (returnValue != 0)
             {
-                SecurityIdentifier sid = GetSidFromToken(tokenPointer);
-                if (sid != null)
+                try
                 {
-                    returnSid = sid;
+                    SecurityIdentifier sid = GetSidFromToken(tokenPointer);
+                    if (sid != null)
+                    {
+                        returnSid = sid;
+                    }
                 }
-                NativeMethods.CloseHandle(tokenPointer);
+                finally
+                { // Always close the token handle, even if SID extraction throws.
+                    NativeMethods.CloseHandle(tokenPointer);
+                }
             }
             return returnSid;
         }
@@ -82,11 +87,17 @@ namespace LsaLogonSessions
             WindowsIdentity returnIdentity = null;
             IntPtr tokenPointer = IntPtr.Zero;
             int returnValue = NativeMethods.WTSQueryUserToken(sessionId, out tokenPointer);
-            int lastWin32Error = Marshal.GetLastWin32Error();
             if (returnValue != 0)
             {
-                returnIdentity = new WindowsIdentity(tokenPointer);
-                NativeMethods.CloseHandle(tokenPointer);
+                try
+                {
+                    returnIdentity = new WindowsIdentity(tokenPointer);
+                }
+                finally
+                { // Always close the token handle, even if the identity
+                  // construction throws.
+                    NativeMethods.CloseHandle(tokenPointer);
+                }
             }
             return returnIdentity;
         }
@@ -179,11 +190,15 @@ namespace LsaLogonSessions
                         SID_AND_ATTRIBUTES sidAndAttributes = (SID_AND_ATTRIBUTES)Marshal.PtrToStructure(new IntPtr(tokenInfo.ToInt64() + i * sidAndAttrSize + IntPtr.Size), typeof(SID_AND_ATTRIBUTES));
 
                         IntPtr pstr = IntPtr.Zero;
-                        NativeMethods.ConvertSidToStringSid(sidAndAttributes.Sid, out pstr);
-                        string sidString = Marshal.PtrToStringAuto(pstr);
-                        NativeMethods.LocalFree(pstr);
-
-                        returnArray[i] = new SecurityIdentifier(sidString);
+                        if ((NativeMethods.ConvertSidToStringSid(sidAndAttributes.Sid, out pstr)) && (pstr != IntPtr.Zero))
+                        {
+                            string sidString = Marshal.PtrToStringAuto(pstr);
+                            NativeMethods.LocalFree(pstr);
+                            if (!string.IsNullOrEmpty(sidString))
+                            {
+                                returnArray[i] = new SecurityIdentifier(sidString);
+                            }
+                        }
                         currentItem = new IntPtr(currentItem.ToInt64() + Marshal.SizeOf(typeof(SID_AND_ATTRIBUTES)));
                     }
 
@@ -250,7 +265,9 @@ namespace LsaLogonSessions
                 sessionIds.CopyTo(returnArray);
             }
 
-            return returnArray;
+            // Return an empty array instead of null so callers can iterate
+            // unconditionally (WTSEnumerateSessions failure or no sessions).
+            return returnArray ?? new int[0];
         }
 
         public static int SendMessageToSession(int sessionId, string message, int messageStyle, int timeout, out int response)
@@ -265,7 +282,8 @@ namespace LsaLogonSessions
 
             // TODO: Change the style parameter to use MessageBoxButtons + MessageBoxIcons data types?
             // TODO: Change the response to be DialogResult data type?
-            return NativeMethods.WTSSendMessage(NativeMethods.WTS_CURRENT_SERVER_HANDLE, sessionId, messageTitle, messageTitle.Length, message, message.Length, messageStyle, timeout, out response, true);
+            // The W-variant lengths are in bytes, not characters.
+            return NativeMethods.WTSSendMessage(NativeMethods.WTS_CURRENT_SERVER_HANDLE, sessionId, messageTitle, messageTitle.Length * 2, message, message.Length * 2, messageStyle, timeout, out response, true);
         }
 
         public static int LogoffSession(int sessionId)

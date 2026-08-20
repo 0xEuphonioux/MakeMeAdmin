@@ -164,7 +164,7 @@
 			<parentCategory ref="makemeadmin:MakeMeAdmin"></parentCategory>
 			<supportedOn ref="windows:SUPPORTED_Windows7" />
 			<elements>
-				<decimal id="TCPServicePortValue" required="true" valueName="TCP Service Port" minValue="1" maxValue="1440" storeAsText="false" />
+				<decimal id="TCPServicePortValue" required="true" valueName="TCP Service Port" minValue="1" maxValue="65535" storeAsText="false" />
 			</elements>
 		</policy>
 
@@ -325,7 +325,7 @@
 				 displayName="$(string.AllowFreeTextReasonDisplayName)"
 				 explainText="$(string.AllowFreeTextReasonExplainText)"
 				 key="SOFTWARE\Policies\Sinclair Community College\Make Me Admin"
-				 valueName="Allow Free Form Reason">
+				 valueName="Allow Free Text Reason">
 			<parentCategory ref="makemeadmin:MakeMeAdmin"></parentCategory>
 			<supportedOn ref="windows:SUPPORTED_Windows7" />
 			<enabledValue>

@@ -248,6 +248,7 @@ namespace SinclairCC.MakeMeAdmin
             //    credential provider returns the UPN, not the SAM name.
             System.Net.NetworkCredential credentials = null;
             int authenticationReturnCode = 0;
+            bool credentialsValidated = false;
             WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent();
             try
             {
@@ -318,6 +319,17 @@ namespace SinclairCC.MakeMeAdmin
                                 if (us >= 0)
                                     currUser = currUser.Substring(us + 1);
 
+                                // Strip any @upn suffix from the current user
+                                // name as well, so the comparison is symmetric
+                                // (the credential side already strips it).
+                                // Without this, an Entra ID identity of the form
+                                // "AzureAD\user@domain.com" can never match the
+                                // bare "user" returned by the credential dialog,
+                                // causing an endless re-prompt loop.
+                                int atIndex2 = currUser.IndexOf('@');
+                                if (atIndex2 >= 0)
+                                    currUser = currUser.Substring(0, atIndex2);
+
                                 nameMatch = string.Equals(
                                     credUser, currUser,
                                     StringComparison.OrdinalIgnoreCase);
@@ -329,6 +341,13 @@ namespace SinclairCC.MakeMeAdmin
                     {
                         authenticationReturnCode =
                             NativeMethods.ValidateCredentials(credentials);
+                        // Only treat the gate as passed once validation has
+                        // actually completed with a zero return code. This
+                        // flag stays false if an exception interrupts the
+                        // flow, so the gate fails closed instead of granting
+                        // rights on an unvalidated credential.
+                        credentialsValidated =
+                            (authenticationReturnCode == 0);
                     }
 
                     // Rate-limit retries to prevent brute-force.
@@ -353,7 +372,7 @@ namespace SinclairCC.MakeMeAdmin
                 MessageBox.Show(this, string.Format("{0}: {1}", excep.GetType().Name, excep.Message), Properties.Resources.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, 0);
             }
 
-            return (null != credentials) && (authenticationReturnCode == 0);
+            return (null != credentials) && credentialsValidated;
         }
 
 
@@ -680,6 +699,18 @@ namespace SinclairCC.MakeMeAdmin
         /// </param>
         private void ButtonStateWorkCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
         {
+            if (e.Error != null)
+            { // The admin-status check failed (e.g. the group query threw).
+              // Keep the UI in a safe, read-only state instead of failing
+              // silently.
+                this.userIsAdmin = false;
+                this.userIsDirectAdmin = false;
+                this.addMeButton.Enabled = false;
+                this.removeMeButton.Enabled = false;
+                this.appStatus.Text = string.Format("Unable to check administrator status: {0}", e.Error.Message);
+                return;
+            }
+
             AdminGroupManipulator adminGroupManipulator = new AdminGroupManipulator();
             bool userIsAuthorizedLocally = adminGroupManipulator.UserIsAuthorized(WindowsIdentity.GetCurrent(), Settings.LocalAllowedEntities, Settings.LocalDeniedEntities);
 

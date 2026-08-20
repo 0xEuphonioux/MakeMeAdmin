@@ -223,6 +223,15 @@ namespace SinclairCC.MakeMeAdmin
                 }
             }
 
+            // Zero and free the credential buffer on every failure path
+            // (cancellation or unpack failure). The buffer holds the raw
+            // credentials; leaving it in unmanaged memory would leak them.
+            if (outCredBuffer != IntPtr.Zero)
+            {
+                Marshal.Copy(new byte[outCredSize], 0, outCredBuffer, (int)outCredSize);
+                CoTaskMemFree(outCredBuffer);
+            }
+
             return null;
         }
 

@@ -250,15 +250,24 @@ namespace SinclairCC.MakeMeAdmin
                     if (!asyncResult.AsyncWaitHandle.WaitOne(System.TimeSpan.FromSeconds(timeout), false))
                     {
                         tcp.Close();
-                        returnValue = false;
+                        // Return immediately: accessing tcp.Client after Close
+                        // throws ObjectDisposedException.
+                        return false;
                     }
 
                     if (tcp.Client != null)
                     {
                         if (tcp.Client.Connected)
                         {
-                            tcp.EndConnect(asyncResult);
-                            returnValue = true;
+                            try
+                            {
+                                tcp.EndConnect(asyncResult);
+                                returnValue = true;
+                            }
+                            catch (System.Net.Sockets.SocketException)
+                            { // Connection refused or otherwise failed.
+                                returnValue = false;
+                            }
                         }
                         else
                         {

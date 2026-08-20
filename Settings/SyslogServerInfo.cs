@@ -33,7 +33,7 @@ namespace SinclairCC.MakeMeAdmin
         /// <summary>
         /// RegEx for validating IP addresses.
         /// </summary>
-        private readonly string ipAddressPattern = @"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}";
+        private readonly string ipAddressPattern = @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$";
 
         /// <summary>
         /// RegEx for validating protocol initialisms.
@@ -71,7 +71,11 @@ namespace SinclairCC.MakeMeAdmin
         public SyslogServerInfo(string hostName, int port, string protocol, string syslogRFC)
         {
             Hostname = hostName;
-            this.protocol = protocol;
+            // Normalize to lower case here as well: the Port setter switches on
+            // the protocol, and an uppercase "TCP"/"UDP" from the registry would
+            // otherwise fall through to the default case and produce an invalid
+            // port (int.MaxValue).
+            this.protocol = (protocol ?? string.Empty).ToLowerInvariant();
             syslogRFCNumber = syslogRFC;
             Port = port;
         }
@@ -170,6 +174,9 @@ namespace SinclairCC.MakeMeAdmin
 
                 // Check the RFC number.
                 returnValue &= System.Text.RegularExpressions.Regex.IsMatch(syslogRFCNumber, versionPattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                // Check the port range.
+                returnValue &= (serverPort >= 1) && (serverPort <= 65535);
 
                 return returnValue;
             }
