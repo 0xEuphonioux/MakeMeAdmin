@@ -9,7 +9,7 @@
     <OutputPath>bin\$(Configuration) $(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration) $(Platform)\</IntermediateOutputPath>
     <SuppressIces>ICE57</SuppressIces>
-    <Cultures></Cultures>
+    <Cultures>en-US</Cultures>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DefineConstants>Debug</DefineConstants>
@@ -17,7 +17,7 @@
     <IntermediateOutputPath>obj\$(Configuration) $(Platform)\</IntermediateOutputPath>
     <SuppressValidation>False</SuppressValidation>
     <SuppressIces>ICE57</SuppressIces>
-    <Cultures></Cultures>
+    <Cultures>en-US</Cultures>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Enumerations\Enumerations.csproj">
@@ -74,6 +74,14 @@
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\Watchdog\Watchdog.csproj">
+      <Name>Watchdog</Name>
+      <Project>{b0b4d7c5-8e6a-4f2a-9b8d-3a6f1e5c2d41}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
     <ProjectReference Include="..\Settings\Settings.csproj">

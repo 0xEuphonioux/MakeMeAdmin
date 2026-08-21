@@ -38,6 +38,7 @@ jobs:
           msbuild UserRequestApp/LocalUI.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
           msbuild RemoteUI/RemoteUI.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
           msbuild Service/Service.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
+          msbuild Watchdog/Watchdog.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
           msbuild WiXCustomAction/WiXCustomAction.csproj /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:Wix3Dir="$env:WIX3_DIR"
         shell: pwsh
 
