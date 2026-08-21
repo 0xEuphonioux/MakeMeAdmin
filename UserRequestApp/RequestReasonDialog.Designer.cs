@@ -50,8 +50,8 @@ namespace SinclairCC.MakeMeAdmin
         {
             this.responseComboBox = new System.Windows.Forms.ComboBox();
             this.reasonTextBox = new System.Windows.Forms.TextBox();
-            this.okButton = new ModernButton();
-            this.cancelButton = new ModernButton();
+            this.okButton = new System.Windows.Forms.Button();
+            this.cancelButton = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
@@ -113,8 +113,8 @@ namespace SinclairCC.MakeMeAdmin
             // RequestReasonDialog
             // 
             this.AcceptButton = this.okButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(384, 358);
             this.Controls.Add(this.label1);
@@ -139,8 +139,8 @@ namespace SinclairCC.MakeMeAdmin
 
         private System.Windows.Forms.ComboBox responseComboBox;
         private System.Windows.Forms.TextBox reasonTextBox;
-        private ModernButton okButton;
-        private ModernButton cancelButton;
+        private System.Windows.Forms.Button okButton;
+        private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Label label1;
     }
 }

@@ -58,10 +58,6 @@ namespace SinclairCC.MakeMeAdmin
         {
             InitializeComponent();
 
-            // AutoScaleMode.Dpi scales bounds but not fonts; scale the form
-            // font so text matches the DPI-scaled controls.
-            this.Font = DpiHelper.ScaleFont(this.Font.FontFamily.Name, this.Font.SizeInPoints, this.Font.Style);
-
             this.addHostNameToMruDelegate = new AddHostNameDelegate(this.AddHostName);
 
             this.requestButton.Enabled = !string.IsNullOrEmpty(this.mruComboBox.Text.Trim());
@@ -76,25 +72,13 @@ namespace SinclairCC.MakeMeAdmin
                 }
             }
 
-            this.Icon = Properties.Resources.UCDavisLock;
-            this.requestButton.IsPrimary = true;
-            this.clearHistoryButton.IsPrimary = false;
-            this.HandleCreated += SubmitRequestForm_HandleCreated;
+            this.Icon = Properties.Resources.SecurityLock;
 
             this.hostNameLabel.Text = Properties.Resources.HostNameLabelText;
             this.requestButton.Text = Properties.Resources.RequestRightsButtonText;
             this.clearHistoryButton.Text = Properties.Resources.ClearHistoryButtonText;
 
             this.SetFormText();
-        }
-
-        /// <summary>
-        /// Applies the Windows 11 visual effects once the window handle exists.
-        /// </summary>
-        private void SubmitRequestForm_HandleCreated(object sender, EventArgs e)
-        {
-            Theme.ApplyTo(this);
-            WindowsEffects.Apply(this, Theme.IsDarkMode);
         }
 
         /// <summary>

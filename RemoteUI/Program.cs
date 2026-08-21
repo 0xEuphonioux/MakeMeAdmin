@@ -29,10 +29,8 @@ namespace SinclairCC.MakeMeAdmin
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        internal static void Main()
+        static void Main()
         {
-            // DPI awareness is declared in app.manifest (PerMonitorV2), which
-            // the operating system applies before any managed code runs.
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new SubmitRequestForm());

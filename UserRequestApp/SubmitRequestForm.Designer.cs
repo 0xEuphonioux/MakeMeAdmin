@@ -33,7 +33,7 @@ namespace SinclairCC.MakeMeAdmin
         /// <summary>
         /// The "add me" button.
         /// </summary>
-        private ModernButton addMeButton;
+        private System.Windows.Forms.Button addMeButton;
 
         /// <summary>
         /// A tooltip to explain other controls.
@@ -43,12 +43,7 @@ namespace SinclairCC.MakeMeAdmin
         /// <summary>
         /// The "remove me" button.
         /// </summary>
-        private ModernButton removeMeButton;
-
-        /// <summary>
-        /// The UC Davis branded header strip.
-        /// </summary>
-        private BrandHeader brandHeader;
+        private System.Windows.Forms.Button removeMeButton;
 
         /// <summary>
         /// A status bar strip.
@@ -104,10 +99,9 @@ namespace SinclairCC.MakeMeAdmin
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SubmitRequestForm));
-            this.addMeButton = new ModernButton();
+            this.addMeButton = new System.Windows.Forms.Button();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
-            this.removeMeButton = new ModernButton();
-            this.brandHeader = new BrandHeader();
+            this.removeMeButton = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.appStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.buttonStateWorker = new System.ComponentModel.BackgroundWorker();
@@ -171,19 +165,10 @@ namespace SinclairCC.MakeMeAdmin
             this.notifyIcon.BalloonTipClosed += new System.EventHandler(this.notifyIcon_BalloonTipClosed);
             this.notifyIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon_MouseDoubleClick);
             // 
-            // brandHeader
-            // 
-            this.brandHeader.Dock = System.Windows.Forms.DockStyle.Top;
-            this.brandHeader.Location = new System.Drawing.Point(0, 0);
-            this.brandHeader.Name = "brandHeader";
-            this.brandHeader.Size = new System.Drawing.Size(506, 64);
-            this.brandHeader.TabIndex = 2;
-            // 
             // SubmitRequestForm
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.Controls.Add(this.brandHeader);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.removeMeButton);
             this.Controls.Add(this.addMeButton);
