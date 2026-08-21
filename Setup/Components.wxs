@@ -46,6 +46,8 @@
 		<Component Id="Service" Guid="DE98A440-7542-4394-9CAB-086B2906D29A">
 			<File Id="ServiceExe" Name="$(var.Service.TargetFileName)" Source="$(var.Service.TargetPath)" KeyPath="yes" />
 			<File Id="ServiceExeConfig" Name="$(var.Service.TargetFileName).config" Source="$(var.Service.TargetPath).config" KeyPath="no" />
+			<File Id="WatchdogExe" Name="$(var.Watchdog.TargetFileName)" Source="$(var.Watchdog.TargetPath)" KeyPath="no" />
+			<File Id="WatchdogExeConfig" Name="$(var.Watchdog.TargetFileName).config" Source="$(var.Watchdog.TargetPath).config" KeyPath="no" />
 
 			<ServiceInstall DisplayName="[ProductName]" Name="MakeMeAdmin" Start="auto" Type="shareProcess" Vital="yes" Description="!(loc.ServiceDescription)" EraseDescription="no" ErrorControl="normal">
 

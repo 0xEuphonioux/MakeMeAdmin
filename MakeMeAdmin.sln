@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Enumerations", "Enumeration
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WiXCustomAction", "WiXCustomAction\WiXCustomAction.csproj", "{B84EFDD8-CEA0-4CCA-B7B8-3F8AB3A336B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Watchdog", "Watchdog\Watchdog.csproj", "{B0B4D7C5-8E6A-4F2A-9B8D-3A6F1E5C2D41}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -90,6 +92,10 @@ Global
 		{B84EFDD8-CEA0-4CCA-B7B8-3F8AB3A336B4}.Debug|x64.Build.0 = Debug|x64
 		{B84EFDD8-CEA0-4CCA-B7B8-3F8AB3A336B4}.Release|x64.ActiveCfg = Release|x64
 		{B84EFDD8-CEA0-4CCA-B7B8-3F8AB3A336B4}.Release|x64.Build.0 = Release|x64
+		{B0B4D7C5-8E6A-4F2A-9B8D-3A6F1E5C2D41}.Debug|x64.ActiveCfg = Debug|x64
+		{B0B4D7C5-8E6A-4F2A-9B8D-3A6F1E5C2D41}.Debug|x64.Build.0 = Debug|x64
+		{B0B4D7C5-8E6A-4F2A-9B8D-3A6F1E5C2D41}.Release|x64.ActiveCfg = Release|x64
+		{B0B4D7C5-8E6A-4F2A-9B8D-3A6F1E5C2D41}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

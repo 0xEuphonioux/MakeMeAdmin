@@ -642,6 +642,29 @@ namespace SinclairCC.MakeMeAdmin
 
             // Start the timer that watches for expired administrator rights.
             this.removalTimer.Start();
+
+            // Start the watchdog companion process. The watchdog holds a
+            // handle to this process and revokes every tracked user if this
+            // service terminates unexpectedly (force-quit, crash, or SCM
+            // kill). A failure to start the watchdog must never prevent the
+            // service from starting.
+            try
+            {
+                string watchdogPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "MakeMeAdminWatchdog.exe");
+                if (System.IO.File.Exists(watchdogPath))
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(watchdogPath, System.Diagnostics.Process.GetCurrentProcess().Id.ToString())
+                    {
+                        CreateNoWindow = true,
+                        WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+                        UseShellExecute = false
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ApplicationLog.WriteEvent(string.Format("Unable to start the watchdog process: {0}", ex.Message), EventID.DebugMessage, System.Diagnostics.EventLogEntryType.Error);
+            }
         }
 
         private void StartTracing()
