@@ -16,7 +16,7 @@
     </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Resources\SecurityLock.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\UCDavisLock.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\$(Configuration) $(Platform)\</OutputPath>
@@ -108,7 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="Resources\SecurityLock.ico" />
+    <None Include="Resources\UCDavisLock.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Enumerations\Enumerations.csproj">
@@ -137,7 +137,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\SecurityLock.ico" />
+    <None Include="Resources\UCDavisLock.ico" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent">

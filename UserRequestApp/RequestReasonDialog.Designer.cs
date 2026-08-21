@@ -50,8 +50,8 @@ namespace SinclairCC.MakeMeAdmin
         {
             this.responseComboBox = new System.Windows.Forms.ComboBox();
             this.reasonTextBox = new System.Windows.Forms.TextBox();
-            this.okButton = new System.Windows.Forms.Button();
-            this.cancelButton = new System.Windows.Forms.Button();
+            this.okButton = new ModernButton();
+            this.cancelButton = new ModernButton();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
@@ -139,8 +139,8 @@ namespace SinclairCC.MakeMeAdmin
 
         private System.Windows.Forms.ComboBox responseComboBox;
         private System.Windows.Forms.TextBox reasonTextBox;
-        private System.Windows.Forms.Button okButton;
-        private System.Windows.Forms.Button cancelButton;
+        private ModernButton okButton;
+        private ModernButton cancelButton;
         private System.Windows.Forms.Label label1;
     }
 }

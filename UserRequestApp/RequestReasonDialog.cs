@@ -29,7 +29,11 @@ namespace SinclairCC.MakeMeAdmin
         {
             InitializeComponent();
 
-            this.Icon = Properties.Resources.SecurityLock;
+            this.Icon = Properties.Resources.UCDavisLock;
+            this.okButton.IsPrimary = true;
+            this.cancelButton.IsPrimary = false;
+            this.HandleCreated += RequestReasonDialog_HandleCreated;
+
             this.reasonTextBox.MaxLength = Settings.MaximumReasonLength;
 
             if ((Settings.CannedReasons != null) && (Settings.CannedReasons.Length > 0))
@@ -66,6 +70,15 @@ namespace SinclairCC.MakeMeAdmin
                 this.responseComboBox.Focus();
             }
             SetOKButtonState();
+        }
+
+        /// <summary>
+        /// Applies the Windows 11 visual effects once the window handle exists.
+        /// </summary>
+        private void RequestReasonDialog_HandleCreated(object sender, EventArgs e)
+        {
+            Theme.ApplyTo(this);
+            WindowsEffects.Apply(this, Theme.IsDarkMode);
         }
 
         private void ReasonTextBoxChangedHandler(object sender, EventArgs e)

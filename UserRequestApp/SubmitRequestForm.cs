@@ -70,10 +70,18 @@ namespace SinclairCC.MakeMeAdmin
         {
             this.InitializeComponent();
 
-            this.Icon = Properties.Resources.SecurityLock;
-            this.notifyIcon.Icon = Properties.Resources.SecurityLock;
+            this.Icon = Properties.Resources.UCDavisLock;
+            this.notifyIcon.Icon = Properties.Resources.UCDavisLock;
+
+            // Windows 11 styling: rounded corners, Mica backdrop, dark mode.
+            this.HandleCreated += SubmitRequestForm_HandleCreated;
+
+            // Branding and primary/secondary button roles.
+            this.addMeButton.IsPrimary = true;
+            this.removeMeButton.IsPrimary = false;
 
             this.SetFormText();
+            this.ApplyModernLayout();
 
             // Configure the notification timer.
             this.notifyIconTimer = new System.Timers.Timer()
@@ -82,6 +90,44 @@ namespace SinclairCC.MakeMeAdmin
             };
             this.notifyIconTimer.AutoReset = true;
             this.notifyIconTimer.Elapsed += NotifyIconTimerElapsed;
+        }
+
+        /// <summary>
+        /// Applies the Windows 11 visual effects once the window handle exists.
+        /// </summary>
+        private void SubmitRequestForm_HandleCreated(object sender, EventArgs e)
+        {
+            Theme.ApplyTo(this);
+            WindowsEffects.Apply(this, Theme.IsDarkMode);
+        }
+
+        /// <summary>
+        /// Positions controls for the modern layout (header on top, actions below).
+        /// </summary>
+        private void ApplyModernLayout()
+        {
+            // The header docks to the top; place the action buttons beneath it.
+            this.addMeButton.Location = new System.Drawing.Point(18, 82);
+            this.addMeButton.Size = new System.Drawing.Size(470, 52);
+            this.removeMeButton.Location = new System.Drawing.Point(18, 144);
+            this.removeMeButton.Size = new System.Drawing.Size(470, 52);
+
+            this.ClientSize = new System.Drawing.Size(506, 232);
+
+            // Segoe UI Variable on Windows 11, falling back to Segoe UI.
+            string uiFontFamily = "Segoe UI";
+            using (System.Drawing.Font test = new System.Drawing.Font("Segoe UI Variable", 9F))
+            {
+                if (string.Equals(test.Name, "Segoe UI Variable", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    uiFontFamily = "Segoe UI Variable";
+                }
+            }
+
+            this.Font = new System.Drawing.Font(uiFontFamily, 9F);
+            this.addMeButton.Font = new System.Drawing.Font(uiFontFamily, 10.5F, System.Drawing.FontStyle.Bold);
+            this.removeMeButton.Font = new System.Drawing.Font(uiFontFamily, 10.5F);
+            this.appStatus.Font = new System.Drawing.Font(uiFontFamily, 9F);
         }
 
 

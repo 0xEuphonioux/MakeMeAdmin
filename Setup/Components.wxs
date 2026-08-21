@@ -2,7 +2,7 @@
 	<Fragment>
 		<Component Id="ApplicationFiles" Guid="9D432F10-34F3-4C55-9C15-FD11961AAE84">
 			<File Id="ElevationUserInterfaceExe" Name="$(var.LocalUI.TargetFileName)" Source="$(var.LocalUI.TargetPath)" KeyPath="yes" />
-			<Shortcut Id="LocalUserInferfaceShortcut" Directory="ProgramMenuFolder" Name="Make Me Admin" Description="Make Me Admin Local User Interface" Advertise="true" WorkingDirectory="INSTALLFOLDER" Icon="SecurityLock.ico" IconIndex="0" />
+			<Shortcut Id="LocalUserInferfaceShortcut" Directory="ProgramMenuFolder" Name="Make Me Admin" Description="Make Me Admin Local User Interface" Advertise="true" WorkingDirectory="INSTALLFOLDER" Icon="UCDavisLock.ico" IconIndex="0" />
 
 			<File Id="EnumerationsDll" Name="$(var.Enumerations.TargetFileName)" Source="$(var.Enumerations.TargetPath)" KeyPath="no" />
 			<File Id="MruLibrary" Name="MruList.dll" Source="$(var.RemoteUI.TargetDir)\MruList.dll" KeyPath="no" />
@@ -39,7 +39,7 @@
 			<File Id="RemoteElevationUserInterfaceExe" Name="$(var.RemoteUI.TargetFileName)" Source="$(var.RemoteUI.TargetPath)" KeyPath="yes" />
 		</Component>
 		<Component Id="RemoteElevationUIShortcut" Guid="A8D789B0-115A-468E-85E7-64EA31FE948E" Condition="INSTALLREMOTESHORTCUT = 1" >
-			<Shortcut Id="RemoteUserInterfaceShortcut" Directory="ProgramMenuFolder" Name="Make Me Admin Remote" Target="[#RemoteElevationUserInterfaceExe]" Description="Make Me Admin Remote User Interface" Advertise="false" WorkingDirectory="INSTALLFOLDER" Icon="SecurityLock.ico" IconIndex="0" />
+			<Shortcut Id="RemoteUserInterfaceShortcut" Directory="ProgramMenuFolder" Name="Make Me Admin Remote" Target="[#RemoteElevationUserInterfaceExe]" Description="Make Me Admin Remote User Interface" Advertise="false" WorkingDirectory="INSTALLFOLDER" Icon="UCDavisLock.ico" IconIndex="0" />
 			<RegistryValue Root="HKCU" Key="Software\Sinclair Community College\Make Me Admin" Name="RemoteUIShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
 		</Component>
 

@@ -31,7 +31,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Resources\SecurityLock.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\UCDavisLock.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\$(Configuration) $(Platform)\</OutputPath>
@@ -70,6 +70,10 @@
     </Compile>
     <Compile Include="NativeMethods.cs" />
     <Compile Include="HelloVerificationHelper.cs" />
+    <Compile Include="Theme.cs" />
+    <Compile Include="WindowsEffects.cs" />
+    <Compile Include="ModernButton.cs" />
+    <Compile Include="BrandHeader.cs" />
     <Compile Include="SubmitRequestForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -166,6 +170,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\SecurityLock.ico" />
+    <None Include="Resources\UCDavisLock.ico" />
+    <None Include="Resources\UCDavisLock.png" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SyslogNet.Client">

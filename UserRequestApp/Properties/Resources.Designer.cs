@@ -190,6 +190,16 @@ namespace SinclairCC.MakeMeAdmin.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        public static System.Drawing.Icon UCDavisLock {
+            get {
+                object obj = ResourceManager.GetObject("UCDavisLock", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Stack Trace.
         /// </summary>
         public static string StackTrace {
