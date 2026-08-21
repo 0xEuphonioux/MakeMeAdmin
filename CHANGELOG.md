@@ -7,6 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 https://github.com/0xEuphonioux/MakeMeAdmin/commits/master
 
+## [2.5.3] - 2026-08-21
+
+### Changed
+
+- Restored the classic window UI format (original layout and sizing, standard buttons, no custom header or theming). The Windows 11 modernized interface introduced a rendering regression on scaled displays; the classic layout renders correctly without a DPI manifest.
+- The application, notification-area, and form icons now use the UC Davis lock logo; installer and shortcut icons already used it.
+- MSI package and assembly versions bumped to 2.5.3; installer artifact named `Make.Me.Admin.2.5.3.x64.msi`.
+
+### Removed
+
+- Windows 11 Fluent styling (custom theme, modern buttons, brand header, Mica backdrop, custom DPI scaling, app manifest).
+
 ## [2.5.2] - 2026-08-21
 
 ### Fixed

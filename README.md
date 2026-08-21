@@ -4,7 +4,7 @@
 
 *Entra ID | Syslog | Biometric | Enterprise-ready*
 
-[Download Installer (v2.5.2)](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.2.x64.msi)
+[Download Installer (v2.5.3)](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.3.x64.msi)
 
 [All releases](https://github.com/0xEuphonioux/MakeMeAdmin/releases) | [Documentation](https://github.com/0xEuphonioux/MakeMeAdmin/wiki) | [Upstream](https://github.com/pseymour/MakeMeAdmin)
 
@@ -26,7 +26,7 @@ Make Me Admin allows standard users to temporarily elevate to administrator with
 
 ## Quick Install
 
-1. [Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.2.x64.msi)
+1. [Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.3.x64.msi)
 2. Run the installer as Administrator
 3. The service starts automatically on install
 
@@ -69,6 +69,13 @@ Full documentation is available in the [project wiki](https://github.com/0xEupho
 ---
 
 ## Version History
+
+### v2.5.3
+
+**Classic Window UI**
+- Restored the original window layout and sizing (classic form, standard buttons, no custom header or theming), which renders correctly across display scales without a DPI manifest.
+- The application icon, notification-area icon, and form icon now use the UC Davis lock logo (transparent); installer and shortcut icons were already updated.
+- Removed the Windows 11 modernized interface (custom theme, modern buttons, brand header, Mica backdrop, custom DPI scaling).
 
 ### v2.5.2
 

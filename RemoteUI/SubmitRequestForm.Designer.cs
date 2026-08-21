@@ -30,8 +30,8 @@
         {
             this.hostNameLabel = new System.Windows.Forms.Label();
             this.mruComboBox = new System.Windows.Forms.ComboBox();
-            this.requestButton = new ModernButton();
-            this.clearHistoryButton = new ModernButton();
+            this.requestButton = new System.Windows.Forms.Button();
+            this.clearHistoryButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // hostNameLabel
@@ -81,8 +81,8 @@
             // SubmitRequestForm
             // 
             this.AcceptButton = this.requestButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(477, 179);
             this.Controls.Add(this.clearHistoryButton);
             this.Controls.Add(this.requestButton);
@@ -105,8 +105,8 @@
 
         private System.Windows.Forms.Label hostNameLabel;
         private System.Windows.Forms.ComboBox mruComboBox;
-        private ModernButton requestButton;
-        private ModernButton clearHistoryButton;
+        private System.Windows.Forms.Button requestButton;
+        private System.Windows.Forms.Button clearHistoryButton;
     }
 }
 

@@ -29,15 +29,7 @@ namespace SinclairCC.MakeMeAdmin
         {
             InitializeComponent();
 
-            // AutoScaleMode.Dpi scales bounds but not fonts; scale the
-            // dialog font so text matches the DPI-scaled controls.
-            this.Font = DpiHelper.ScaleFont(this.Font.FontFamily.Name, this.Font.SizeInPoints, this.Font.Style);
-
-            this.Icon = Properties.Resources.UCDavisLock;
-            this.okButton.IsPrimary = true;
-            this.cancelButton.IsPrimary = false;
-            this.HandleCreated += RequestReasonDialog_HandleCreated;
-
+            this.Icon = Properties.Resources.SecurityLock;
             this.reasonTextBox.MaxLength = Settings.MaximumReasonLength;
 
             if ((Settings.CannedReasons != null) && (Settings.CannedReasons.Length > 0))
@@ -74,15 +66,6 @@ namespace SinclairCC.MakeMeAdmin
                 this.responseComboBox.Focus();
             }
             SetOKButtonState();
-        }
-
-        /// <summary>
-        /// Applies the Windows 11 visual effects once the window handle exists.
-        /// </summary>
-        private void RequestReasonDialog_HandleCreated(object sender, EventArgs e)
-        {
-            Theme.ApplyTo(this);
-            WindowsEffects.Apply(this, Theme.IsDarkMode);
         }
 
         private void ReasonTextBoxChangedHandler(object sender, EventArgs e)
