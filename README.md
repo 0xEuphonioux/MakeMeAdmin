@@ -4,9 +4,9 @@
 
 *Entra ID | Syslog | Biometric | Enterprise-ready*
 
-[Download Installer (v2.5.0)](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.0.x64.msi)
+[Download Installer (v2.5.1)](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.1.x64.msi)
 
-[All releases](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest) | [Documentation](https://github.com/pseymour/MakeMeAdmin/wiki) | [Upstream](https://github.com/pseymour/MakeMeAdmin)
+[All releases](https://github.com/0xEuphonioux/MakeMeAdmin/releases) | [Documentation](https://github.com/0xEuphonioux/MakeMeAdmin/wiki) | [Upstream](https://github.com/pseymour/MakeMeAdmin)
 
 ---
 
@@ -26,7 +26,7 @@ Make Me Admin allows standard users to temporarily elevate to administrator with
 
 ## Quick Install
 
-1. [Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.0.x64.msi)
+1. [Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.1.x64.msi)
 2. Run the installer as Administrator
 3. The service starts automatically on install
 
@@ -55,20 +55,41 @@ HKLM\SOFTWARE\Sinclair Community College\Make Me Admin\           (Local)
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `Admin Rights Timeout` | DWORD | 30 | Minutes before automatic revocation |
+| `Admin Rights Timeout` | DWORD | 10 | Minutes before automatic revocation |
 | `Prompt For Reason` | DWORD | 0 (None) | 0=None, 1=Optional, 2=Required |
 | `Allow Free Text Reason` | DWORD | 1 (Yes) | Allow custom reason text |
 | `Canned Reasons` | MULTI_SZ | -- | Predefined reason dropdown values |
 | `Require Authentication For Privileges` | DWORD | 1 (Yes) | Require password or biometric verification |
 | `Allow Windows Hello Authentication` | DWORD | 1 (Yes) | Enable PIN, fingerprint, or facial recognition |
-| `Remove Admin Rights On Logout` | DWORD | 1 (Yes) | Revoke rights on user sign-out |
-| `Log Elevated Processes` | DWORD | 0 (No) | Log elevation events for launched processes |
+| `Remove Admin Rights On Logout` | DWORD | 0 (No) | Revoke rights on user sign-out |
+| `Log Elevated Processes` | DWORD | 0 (Never) | 0=Never, 1=OnlyWhenAdmin, 2=Always |
 
-Full documentation is available in the [upstream wiki](https://github.com/pseymour/MakeMeAdmin/wiki).
+Full documentation is available in the [project wiki](https://github.com/0xEuphonioux/MakeMeAdmin/wiki).
 
 ---
 
 ## Version History
+
+### v2.5.1
+
+**Security Hardening**
+- Fail-closed authentication gate: credential validation exceptions no longer permit elevation
+- Symmetric UPN normalization for hybrid-joined devices
+- TOKEN_GROUPS marshaling fixed, restoring accurate group-membership checks
+- Credential buffer zeroed after use in the authentication prompt
+
+**Robustness**
+- Revocation chain protected against concurrency: synchronized user-list access, atomic file writes, exception-contained removal timer
+- `User.Name` serialization fixed, eliminating a null dereference on the renewal path
+- OnStop and session-change handlers hardened against exceptions
+- Defensive registry parsing (REG_DWORD/REG_QWORD/REG_SZ) with fail-closed behavior
+- Reason text sanitized before inclusion in event output
+
+**Operations**
+- Syslog: TCP timeouts, server-entry validation, and port range checks
+- WTS session interop upgraded to Unicode API with token-handle cleanup
+- ETW logging made thread-safe
+- Service recreates the host on channel fault
 
 ### v2.5.0
 
