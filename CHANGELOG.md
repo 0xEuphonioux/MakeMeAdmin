@@ -7,6 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 https://github.com/0xEuphonioux/MakeMeAdmin/commits/master
 
+## [2.5.2] - 2026-08-21
+
+### Fixed
+
+- Forms now use `AutoScaleMode.Dpi` with an explicit `DeviceDpi / 96` scale factor, eliminating font-metric-dependent scaling. The previous `AutoScaleMode.Font` configuration mis-scaled controls (buttons rendered 301px wide instead of the designed 470px at 100% DPI), producing a small fixed-size window with cut-off content and invisible action buttons on scaled displays (125%, 150%, 200%).
+- Fonts are scaled explicitly (via `DpiHelper`) to match the DPI-scaled controls on all forms and dialogs.
+- The navy brand header is no longer overwritten with the window background color by the theme pass.
+
+### Changed
+
+- MSI package and assembly versions bumped to 2.5.2; installer artifact named `Make.Me.Admin.2.5.2.x64.msi`.
+
 ## [2.5.1] - 2026-08-21
 
 ### Added

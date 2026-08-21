@@ -4,7 +4,7 @@
 
 *Entra ID | Syslog | Biometric | Enterprise-ready*
 
-[Download Installer (v2.5.1)](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.1.x64.msi)
+[Download Installer (v2.5.2)](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.2.x64.msi)
 
 [All releases](https://github.com/0xEuphonioux/MakeMeAdmin/releases) | [Documentation](https://github.com/0xEuphonioux/MakeMeAdmin/wiki) | [Upstream](https://github.com/pseymour/MakeMeAdmin)
 
@@ -26,7 +26,7 @@ Make Me Admin allows standard users to temporarily elevate to administrator with
 
 ## Quick Install
 
-1. [Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.1.x64.msi)
+1. [Download the MSI](https://github.com/0xEuphonioux/MakeMeAdmin/releases/latest/download/Make.Me.Admin.2.5.2.x64.msi)
 2. Run the installer as Administrator
 3. The service starts automatically on install
 
@@ -69,6 +69,13 @@ Full documentation is available in the [project wiki](https://github.com/0xEupho
 ---
 
 ## Version History
+
+### v2.5.2
+
+**Display Scaling Fix**
+- Deterministic DPI scaling: forms now use `AutoScaleMode.Dpi` with an explicit `DeviceDpi / 96` scale factor, replacing font-metric-based scaling. This fixes the small-window, cut-off-content, and invisible-buttons rendering on scaled displays (125%, 150%, 200%).
+- Fonts are scaled explicitly to match the DPI-scaled controls across all forms and dialogs.
+- The navy brand header is no longer repainted with the window background during theming.
 
 ### v2.5.1
 
