@@ -69,6 +69,7 @@
     <Compile Include="Theme.cs" />
     <Compile Include="WindowsEffects.cs" />
     <Compile Include="ModernButton.cs" />
+    <Compile Include="DpiHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Resources.da.resx" />

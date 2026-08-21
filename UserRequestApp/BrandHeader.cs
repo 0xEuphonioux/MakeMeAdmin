@@ -52,7 +52,7 @@ namespace SinclairCC.MakeMeAdmin
             this.titleLabel = new Label();
             this.titleLabel.Text = Properties.Resources.ApplicationName;
             this.titleLabel.ForeColor = Color.White;
-            this.titleLabel.Font = new Font("Segoe UI Variable", 12F, FontStyle.Bold);
+            this.titleLabel.Font = DpiHelper.ScaleFont("Segoe UI Variable", 12F, FontStyle.Bold);
             this.titleLabel.AutoSize = true;
             this.titleLabel.Location = new Point(66, 12);
             this.titleLabel.BackColor = Color.Transparent;
@@ -60,7 +60,7 @@ namespace SinclairCC.MakeMeAdmin
             this.subtitleLabel = new Label();
             this.subtitleLabel.Text = "Temporary administrator privileges";
             this.subtitleLabel.ForeColor = Color.FromArgb(210, 220, 235);
-            this.subtitleLabel.Font = new Font("Segoe UI Variable", 8.5F);
+            this.subtitleLabel.Font = DpiHelper.ScaleFont("Segoe UI Variable", 8.5F, FontStyle.Regular);
             this.subtitleLabel.AutoSize = true;
             this.subtitleLabel.Location = new Point(66, 36);
             this.subtitleLabel.BackColor = Color.Transparent;

@@ -75,6 +75,7 @@
     <Compile Include="WindowsEffects.cs" />
     <Compile Include="ModernButton.cs" />
     <Compile Include="BrandHeader.cs" />
+    <Compile Include="DpiHelper.cs" />
     <Compile Include="SubmitRequestForm.cs">
       <SubType>Form</SubType>
     </Compile>

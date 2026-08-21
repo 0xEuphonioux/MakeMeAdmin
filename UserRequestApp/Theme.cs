@@ -167,6 +167,12 @@ namespace SinclairCC.MakeMeAdmin
         {
             foreach (Control control in controls)
             {
+                // The brand header keeps its own navy branding regardless of theme.
+                if (control is BrandHeader)
+                {
+                    continue;
+                }
+
                 // Status strip is a ToolStrip subclass; keep its own rendering.
                 if (control is StatusStrip || control is ToolStrip)
                 {
