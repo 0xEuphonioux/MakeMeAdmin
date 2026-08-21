@@ -80,9 +80,21 @@ namespace SinclairCC.MakeMeAdmin
 
             if (!this.Enabled)
             {
-                background = this.IsPrimary ? Color.FromArgb(160, 170, 190) : Color.FromArgb(240, 240, 240);
-                foreground = this.IsPrimary ? Color.FromArgb(230, 230, 230) : Color.FromArgb(160, 160, 160);
-                border = background;
+                // Disabled buttons must remain clearly visible: a distinct
+                // plate with a readable greyed text. The previous palette
+                // (240,240,240 on a 243,243,243 window) was nearly invisible.
+                if (Theme.IsDarkMode)
+                {
+                    background = Color.FromArgb(54, 54, 54);
+                    foreground = Color.FromArgb(130, 130, 130);
+                    border = Color.FromArgb(78, 78, 78);
+                }
+                else
+                {
+                    background = Color.FromArgb(231, 231, 231);
+                    foreground = Color.FromArgb(128, 128, 128);
+                    border = Color.FromArgb(198, 198, 198);
+                }
             }
 
             using (GraphicsPath path = CreateRoundedRectangle(this.ClientRectangle, CornerRadius))
@@ -105,7 +117,7 @@ namespace SinclairCC.MakeMeAdmin
                 this.ClientRectangle,
                 foreground,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
-                TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+                TextFormatFlags.EndEllipsis);
         }
 
         /// <summary>

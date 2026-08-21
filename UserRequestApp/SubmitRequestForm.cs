@@ -115,6 +115,9 @@ namespace SinclairCC.MakeMeAdmin
             this.ClientSize = new System.Drawing.Size(506, 232);
 
             // Segoe UI Variable on Windows 11, falling back to Segoe UI.
+            // The form's own font comes from the resource file (Segoe UI 9pt)
+            // so AutoScaleDimensions stays consistent with the design font;
+            // changing the form Font at runtime would break auto-scaling.
             string uiFontFamily = "Segoe UI";
             using (System.Drawing.Font test = new System.Drawing.Font("Segoe UI Variable", 9F))
             {
@@ -124,27 +127,9 @@ namespace SinclairCC.MakeMeAdmin
                 }
             }
 
-            this.Font = new System.Drawing.Font(uiFontFamily, 9F);
             this.addMeButton.Font = new System.Drawing.Font(uiFontFamily, 10.5F, System.Drawing.FontStyle.Bold);
             this.removeMeButton.Font = new System.Drawing.Font(uiFontFamily, 10.5F);
             this.appStatus.Font = new System.Drawing.Font(uiFontFamily, 9F);
-
-            // Re-baseline auto-scaling on the actual runtime font so the form
-            // renders at 1:1 on 100% DPI displays and scales proportionally at
-            // higher DPI settings. The stored design-time dimensions can
-            // reflect the developer machine's scale factor rather than the
-            // runtime display, which would otherwise shrink or enlarge the UI.
-            try
-            {
-                this.AutoScaleDimensions = new System.Drawing.SizeF(
-                    TextRenderer.MeasureText(" ", this.Font).Width,
-                    TextRenderer.MeasureText(" ", this.Font).Height);
-                this.PerformAutoScale();
-            }
-            catch (Exception)
-            {
-                // Scaling is a layout nicety; never fail the elevation UI for it.
-            }
         }
 
 
