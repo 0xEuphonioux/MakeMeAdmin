@@ -115,9 +115,8 @@ namespace SinclairCC.MakeMeAdmin
             this.ClientSize = new System.Drawing.Size(506, 232);
 
             // Segoe UI Variable on Windows 11, falling back to Segoe UI.
-            // The form's own font comes from the resource file (Segoe UI 9pt)
-            // so AutoScaleDimensions stays consistent with the design font;
-            // changing the form Font at runtime would break auto-scaling.
+            // The form uses AutoScaleMode.Dpi, which scales control bounds by
+            // the DPI ratio but not fonts, so all fonts are scaled explicitly.
             string uiFontFamily = "Segoe UI";
             using (System.Drawing.Font test = new System.Drawing.Font("Segoe UI Variable", 9F))
             {
@@ -127,9 +126,10 @@ namespace SinclairCC.MakeMeAdmin
                 }
             }
 
-            this.addMeButton.Font = new System.Drawing.Font(uiFontFamily, 10.5F, System.Drawing.FontStyle.Bold);
-            this.removeMeButton.Font = new System.Drawing.Font(uiFontFamily, 10.5F);
-            this.appStatus.Font = new System.Drawing.Font(uiFontFamily, 9F);
+            this.Font = DpiHelper.ScaleFont(uiFontFamily, 9F, System.Drawing.FontStyle.Regular);
+            this.addMeButton.Font = DpiHelper.ScaleFont(uiFontFamily, 10.5F, System.Drawing.FontStyle.Bold);
+            this.removeMeButton.Font = DpiHelper.ScaleFont(uiFontFamily, 10.5F, System.Drawing.FontStyle.Regular);
+            this.appStatus.Font = DpiHelper.ScaleFont(uiFontFamily, 9F, System.Drawing.FontStyle.Regular);
         }
 
 

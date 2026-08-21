@@ -58,6 +58,10 @@ namespace SinclairCC.MakeMeAdmin
         {
             InitializeComponent();
 
+            // AutoScaleMode.Dpi scales bounds but not fonts; scale the form
+            // font so text matches the DPI-scaled controls.
+            this.Font = DpiHelper.ScaleFont(this.Font.FontFamily.Name, this.Font.SizeInPoints, this.Font.Style);
+
             this.addHostNameToMruDelegate = new AddHostNameDelegate(this.AddHostName);
 
             this.requestButton.Enabled = !string.IsNullOrEmpty(this.mruComboBox.Text.Trim());

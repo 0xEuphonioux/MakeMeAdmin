@@ -29,6 +29,10 @@ namespace SinclairCC.MakeMeAdmin
         {
             InitializeComponent();
 
+            // AutoScaleMode.Dpi scales bounds but not fonts; scale the
+            // dialog font so text matches the DPI-scaled controls.
+            this.Font = DpiHelper.ScaleFont(this.Font.FontFamily.Name, this.Font.SizeInPoints, this.Font.Style);
+
             this.Icon = Properties.Resources.UCDavisLock;
             this.okButton.IsPrimary = true;
             this.cancelButton.IsPrimary = false;
