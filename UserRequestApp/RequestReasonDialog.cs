@@ -29,6 +29,21 @@ namespace SinclairCC.MakeMeAdmin
         {
             InitializeComponent();
 
+            // Re-baseline auto-scaling on the actual runtime font so the
+            // dialog renders at 1:1 on 100% DPI displays and scales
+            // proportionally at higher DPI settings.
+            try
+            {
+                this.AutoScaleDimensions = new System.Drawing.SizeF(
+                    TextRenderer.MeasureText(" ", this.Font).Width,
+                    TextRenderer.MeasureText(" ", this.Font).Height);
+                this.PerformAutoScale();
+            }
+            catch (Exception)
+            {
+                // Scaling is a layout nicety; never fail the dialog for it.
+            }
+
             this.Icon = Properties.Resources.UCDavisLock;
             this.okButton.IsPrimary = true;
             this.cancelButton.IsPrimary = false;

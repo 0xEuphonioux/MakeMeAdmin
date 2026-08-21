@@ -32,6 +32,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>Resources\UCDavisLock.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\$(Configuration) $(Platform)\</OutputPath>
@@ -172,6 +173,7 @@
     <None Include="Resources\SecurityLock.ico" />
     <None Include="Resources\UCDavisLock.ico" />
     <None Include="Resources\UCDavisLock.png" />
+    <None Include="app.manifest" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SyslogNet.Client">
