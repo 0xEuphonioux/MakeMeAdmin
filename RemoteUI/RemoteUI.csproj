@@ -36,7 +36,8 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Resources\SecurityLock.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\UCDavisLock.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="MruList">
@@ -121,6 +122,7 @@
   <ItemGroup>
     <None Include="Resources\SecurityLock.ico" />
     <None Include="Resources\UCDavisLock.ico" />
+    <None Include="app.manifest" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

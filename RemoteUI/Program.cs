@@ -29,36 +29,13 @@ namespace SinclairCC.MakeMeAdmin
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        internal static void Main()
         {
+            // DPI awareness is declared in app.manifest (PerMonitorV2), which
+            // the operating system applies before any managed code runs.
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            EnablePerMonitorV2DpiAwareness();
             Application.Run(new SubmitRequestForm());
-        }
-
-        /// <summary>
-        /// Enables PerMonitorV2 DPI awareness where supported (.NET Framework 4.7+).
-        /// Uses reflection so the call is a no-op on runtimes without the API.
-        /// HighDpiMode.PerMonitorV2 has the numeric value 4.
-        /// </summary>
-        private static void EnablePerMonitorV2DpiAwareness()
-        {
-            try
-            {
-                System.Reflection.MethodInfo setHighDpi =
-                    typeof(Application).GetMethod("SetHighDpiMode");
-                if (setHighDpi != null)
-                {
-                    object perMonitorV2 = Enum.Parse(
-                        setHighDpi.GetParameters()[0].ParameterType, "PerMonitorV2");
-                    setHighDpi.Invoke(null, new object[] { perMonitorV2 });
-                }
-            }
-            catch (Exception)
-            {
-                // DPI awareness is a rendering nicety; never fail startup for it.
-            }
         }
     }
 }

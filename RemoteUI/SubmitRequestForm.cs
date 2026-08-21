@@ -72,6 +72,21 @@ namespace SinclairCC.MakeMeAdmin
                 }
             }
 
+            // Re-baseline auto-scaling on the actual runtime font so the
+            // form renders at 1:1 on 100% DPI displays and scales
+            // proportionally at higher DPI settings.
+            try
+            {
+                this.AutoScaleDimensions = new System.Drawing.SizeF(
+                    TextRenderer.MeasureText(" ", this.Font).Width,
+                    TextRenderer.MeasureText(" ", this.Font).Height);
+                this.PerformAutoScale();
+            }
+            catch (Exception)
+            {
+                // Scaling is a layout nicety; never fail the elevation UI for it.
+            }
+
             this.Icon = Properties.Resources.UCDavisLock;
             this.requestButton.IsPrimary = true;
             this.clearHistoryButton.IsPrimary = false;

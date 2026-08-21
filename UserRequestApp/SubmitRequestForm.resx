@@ -172,7 +172,7 @@
     <value>1</value>
   </data>
   <data name="removeMeButton.Text" xml:space="preserve">
-    <value>&amp;Remove My Administrator Rights</value>
+    <value>&amp;Remove My Admin Rights</value>
   </data>
   <data name="removeMeButton.ToolTip" xml:space="preserve">
     <value>Remove the current Windows user from the Administrators group.</value>
