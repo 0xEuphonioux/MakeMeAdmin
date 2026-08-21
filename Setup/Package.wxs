@@ -3,9 +3,9 @@
 		<Launch Condition="Privileged" Message="!(loc.AdminRightsRequired)" />
 		<MajorUpgrade DowngradeErrorMessage="!(loc.NewerVersionInstalled)" />
 		<MediaTemplate EmbedCab="yes" />
-		<Icon Id="SecurityLock.ico" SourceFile="..\SecurityLock.ico" />
+		<Icon Id="UCDavisLock.ico" SourceFile="..\UCDavisLock.ico" />
 
-		<Property Id="ARPPRODUCTICON" Value="SecurityLock.ico" />
+		<Property Id="ARPPRODUCTICON" Value="UCDavisLock.ico" />
 		<Property Id="ARPNOMODIFY" Value="yes" Secure="yes" />
 		<Property Id="DISABLEADVTSHORTCUTS" Value="1" />
 		<Property Id="INSTALLREMOTESHORTCUT" Secure="yes" Value="0" />

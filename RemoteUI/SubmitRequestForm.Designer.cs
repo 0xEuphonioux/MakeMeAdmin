@@ -30,8 +30,8 @@
         {
             this.hostNameLabel = new System.Windows.Forms.Label();
             this.mruComboBox = new System.Windows.Forms.ComboBox();
-            this.requestButton = new System.Windows.Forms.Button();
-            this.clearHistoryButton = new System.Windows.Forms.Button();
+            this.requestButton = new ModernButton();
+            this.clearHistoryButton = new ModernButton();
             this.SuspendLayout();
             // 
             // hostNameLabel
@@ -105,8 +105,8 @@
 
         private System.Windows.Forms.Label hostNameLabel;
         private System.Windows.Forms.ComboBox mruComboBox;
-        private System.Windows.Forms.Button requestButton;
-        private System.Windows.Forms.Button clearHistoryButton;
+        private ModernButton requestButton;
+        private ModernButton clearHistoryButton;
     }
 }
 
