@@ -7,6 +7,42 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 https://github.com/0xEuphonioux/MakeMeAdmin/commits/master
 
+## [2.5.1] - 2026-08-21
+
+### Added
+
+- Labeled authorization denial messages identifying which allowed-entities list (local, remote, or automatic-add) is empty, with the exact registry paths checked.
+- Defensive DWORD registry parsing accepting REG_DWORD, REG_QWORD, and REG_SZ, with fail-closed behavior on invalid data.
+- Legacy value name compatibility for the Group Policy reason setting (`Allow Free Form Reason` continues to be honored alongside the canonical `Allow Free Text Reason`).
+
+### Changed
+
+- Authentication gate is now fail-closed: an exception or incomplete credential validation can no longer result in elevation without validated credentials.
+- UPN normalization is symmetric — the `@upn` suffix is stripped from both the current user name and the supplied credential, fixing hybrid-join authentication.
+- TOKEN_GROUPS marshaling fixed (removed `ByValArray` without `SizeConst`), restoring accurate administrator group-membership checks.
+- Credential buffer is zeroed after use in the authentication prompt.
+- User list writes are atomic (temp file + rename) and serialized under a lock; the data directory ACL is applied on first use.
+- User.Name is now serialized in the encrypted user list, fixing a null dereference on the rights-renewal path.
+- Removal timer, OnStop revocation, and session-change handling are exception-contained and re-entrancy-safe.
+- Syslog TCP sends honor a connection timeout; syslog server entries are validated with port range checks.
+- WTS session interop uses the Unicode API and cleans up token handles.
+- Reason text is sanitized before inclusion in event log output.
+- ETW logging is thread-safe.
+- The service recreates the named-pipe host if the channel faults.
+- MSI package and assembly versions bumped to 2.5.1; installer artifact named `Make.Me.Admin.2.5.1.x64.msi`.
+
+### Fixed
+
+- Null dereference in `GetLocalGroupMembers` during user removal and membership checks.
+- Null dereference in `GetTimeoutForUser` on the renewal path.
+- Group Policy value-name mismatch for the free-text reason setting.
+- Registry `REG_SZ` values no longer throw `InvalidCastException` when a `REG_MULTI_SZ` is expected.
+
+### Security
+
+- Fail-closed authentication: no elevation path remains reachable without a completed credential validation.
+- Credential data remains excluded from all log output.
+
 ## [2.5.0] - 2025-06-22
 
 ### Added
